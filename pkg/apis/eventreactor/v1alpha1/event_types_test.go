@@ -34,7 +34,18 @@ func TestStorageEvent(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo",
 			Namespace: "default",
-		}}
+		},
+		Spec: EventSpec{
+			CloudEventsVersion: "0.1",
+			EventID:            "4f6e2a13-592a-4c39-b4e4-b7194f4a4318",
+			EventTime:          metav1.Now(),
+			EventType:          "eventreactor.test",
+			EventTypeVersion:   "1.0",
+			Source:             "eventreactor/apis/v1alpha1/events",
+			ContentType:        "application/json",
+			Data:               "{\"test\":true}",
+		},
+	}
 	g := gomega.NewGomegaWithT(t)
 
 	// Test Create

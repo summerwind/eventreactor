@@ -21,6 +21,29 @@ spec:
         metadata:
           type: object
         spec:
+          properties:
+            cloudEventsVersion:
+              type: string
+            contentType:
+              type: string
+            data:
+              type: string
+            eventID:
+              type: string
+            eventTime:
+              format: date-time
+              type: string
+            eventType:
+              type: string
+            eventTypeVersion:
+              type: string
+            source:
+              type: string
+          required:
+          - cloudEventsVersion
+          - eventID
+          - eventType
+          - source
           type: object
         status:
           type: object

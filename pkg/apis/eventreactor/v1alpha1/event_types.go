@@ -25,8 +25,14 @@ import (
 
 // EventSpec defines the desired state of Event
 type EventSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	CloudEventsVersion string      `json:"cloudEventsVersion"`
+	EventID            string      `json:"eventID"`
+	EventTime          metav1.Time `json:"eventTime,omitempty"`
+	EventType          string      `json:"eventType"`
+	EventTypeVersion   string      `json:"eventTypeVersion,omitempty"`
+	Source             string      `json:"source"`
+	ContentType        string      `json:"contentType,omitempty"`
+	Data               string      `json:"data,omitempty"`
 }
 
 // EventStatus defines the observed state of Event
