@@ -1,0 +1,9 @@
+apiVersion: eventreactor.summerwind.github.io/v1alpha1
+kind: Event
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: event-sample
+spec:
+  # Add fields here
+  foo: bar
