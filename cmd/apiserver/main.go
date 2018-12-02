@@ -62,14 +62,14 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Print(err)
+		logError(fmt.Sprintf("Unable to read the request body: %v", err))
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
 	name, err := newEventName()
 	if err != nil {
-		log.Print(err)
+		logError(fmt.Sprintf("Failed to generate event name: %v", err))
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
@@ -104,7 +104,7 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = c.Create(context.TODO(), ev)
 	if err != nil {
-		log.Print(err)
+		logError(fmt.Sprintf("Unable to create event: %v", err))
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
@@ -166,9 +166,6 @@ func run(cmd *cobra.Command, args []string) error {
 
 	t := time.Now()
 	entropy = rand.New(rand.NewSource(t.UnixNano()))
-
-	//http.HandleFunc("/api/v1alpha1/events", eventHandler)
-	//http.ListenAndServe(fmt.Sprintf("%s:%d", addr, port), nil)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1alpha1/events", eventHandler)
