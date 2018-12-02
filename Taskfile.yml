@@ -1,0 +1,56 @@
+version: 2
+
+vars:
+  NAME: eventreactor
+  VERSION: 0.1.0
+
+tasks:
+  default:
+    deps: [build]
+  test:
+    deps: [fmt, vet, generate, manifests]
+    cmds:
+      - go test ./pkg/... ./cmd/... -coverprofile cover.out
+  build:
+    deps: [test]
+    cmds:
+      - go build -o bin/manager ./cmd/manager
+      - go build -o bin/apiserver ./cmd/apiserver
+  manager:
+    deps: [test]
+    cmds:
+      - go run ./cmd/manager/main.go
+  apiserver:
+    deps: [test]
+    cmds:
+      - go run ./cmd/apiserver/main.go
+  install:
+    deps: [manifests]
+    cmds:
+      - kubectl apply -f config/crds
+  deploy:
+    deps: [manifests]
+    cmds:
+      - kubectl apply -f config/crds
+      - kustomize build config/default | kubectl apply -f -
+  fmt:
+    cmds:
+      - go fmt ./pkg/... ./cmd/...
+  vet:
+    cmds:
+      - go vet ./pkg/... ./cmd/...
+  generate:
+    cmds:
+      - go generate ./pkg/... ./cmd/...
+  manifests:
+    cmds:
+      - go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go all
+  docker-build:
+    cmds:
+      - docker build -t {{.NAME}}:latest -t {{.NAME}}:{{.VERSION}} .
+  docker-push:
+    cmds:
+      - docker push {{.NAME}}:latest
+  vendor:
+    cmds:
+      - dep ensure -v
