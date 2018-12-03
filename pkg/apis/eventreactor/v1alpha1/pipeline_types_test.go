@@ -19,8 +19,10 @@ package v1alpha1
 import (
 	"testing"
 
+	buildv1alpha1 "github.com/knative/build/pkg/apis/build/v1alpha1"
 	"github.com/onsi/gomega"
 	"golang.org/x/net/context"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -34,7 +36,26 @@ func TestStoragePipeline(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo",
 			Namespace: "default",
-		}}
+		},
+		Spec: PipelineSpec{
+			BuildSpec: buildv1alpha1.BuildSpec{
+				Steps: []corev1.Container{
+					corev1.Container{
+						Name:  "hello",
+						Image: "ubuntu:18.04",
+						Args:  []string{"echo", "hello world"},
+					},
+				},
+			},
+
+			Trigger: PipelineTrigger{
+				Event: PipelineEventTrigger{
+					Type:   "io.github.summerwind.eventreactor.test",
+					Source: "/eventreactor/test/hello",
+				},
+			},
+		},
+	}
 	g := gomega.NewGomegaWithT(t)
 
 	// Test Create

@@ -21,6 +21,24 @@ spec:
         metadata:
           type: object
         spec:
+          properties:
+            trigger:
+              properties:
+                event:
+                  properties:
+                    source:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - type
+                  - source
+                  type: object
+              required:
+              - event
+              type: object
+          required:
+          - trigger
           type: object
         status:
           type: object

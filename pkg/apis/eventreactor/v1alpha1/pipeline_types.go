@@ -17,16 +17,24 @@ limitations under the License.
 package v1alpha1
 
 import (
+	buildv1alpha1 "github.com/knative/build/pkg/apis/build/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+type PipelineEventTrigger struct {
+	Type   string `json:"type"`
+	Source string `json:"source"`
+}
+
+type PipelineTrigger struct {
+	Event PipelineEventTrigger `json:"event"`
+}
 
 // PipelineSpec defines the desired state of Pipeline
 type PipelineSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	buildv1alpha1.BuildSpec
+
+	Trigger PipelineTrigger `json:"trigger"`
 }
 
 // PipelineStatus defines the observed state of Pipeline

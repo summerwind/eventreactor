@@ -1,9 +1,15 @@
 apiVersion: eventreactor.summerwind.github.io/v1alpha1
 kind: Pipeline
 metadata:
+  name: pipeline-sample
   labels:
     controller-tools.k8s.io: "1.0"
-  name: pipeline-sample
 spec:
-  # Add fields here
-  foo: bar
+  steps:
+  - name: hello
+    image: ubuntu:18.04
+    args: ["echo", "hello world"]
+  trigger:
+    event:
+      type: io.github.summerwind.eventreactor.test
+      source: /eventreactor/test/hello
