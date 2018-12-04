@@ -81,7 +81,7 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 			Namespace: "default",
 			Name:      name,
 			Labels: map[string]string{
-				"eventreactor.summerwind.github.io/event-type": eventType,
+				v1alpha1.LabelEventType: eventType,
 			},
 		},
 		Spec: v1alpha1.EventSpec{
