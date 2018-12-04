@@ -21,9 +21,8 @@ import (
 	"time"
 
 	"github.com/onsi/gomega"
-	eventreactorv1alpha1 "github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
+	v1alpha1 "github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
 	"golang.org/x/net/context"
-	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,14 +33,32 @@ import (
 
 var c client.Client
 
-var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: "default"}}
-var depKey = types.NamespacedName{Name: "foo-deployment", Namespace: "default"}
-
 const timeout = time.Second * 5
 
 func TestReconcile(t *testing.T) {
+	instance := &v1alpha1.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.PipelineSpec{
+			Trigger: v1alpha1.PipelineTrigger{
+				Event: v1alpha1.PipelineEventTrigger{
+					Type:   "io.github.summerwind.eventreactor.test",
+					Source: "/eventreactor/test/controller",
+				},
+			},
+		},
+	}
+
+	expected := reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      "test",
+			Namespace: "default",
+		},
+	}
+
 	g := gomega.NewGomegaWithT(t)
-	instance := &eventreactorv1alpha1.Pipeline{ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "default"}}
 
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
@@ -59,7 +76,7 @@ func TestReconcile(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
-	// Create the Pipeline object and expect the Reconcile and Deployment to be created
+	// Create the Pipeline object and expect the Reconcile and Deployment to be created.
 	err = c.Create(context.TODO(), instance)
 	// The instance object may not be a valid object because it might be missing some required fields.
 	// Please modify the instance object by adding required fields and then remove the following if statement.
@@ -69,19 +86,12 @@ func TestReconcile(t *testing.T) {
 	}
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	defer c.Delete(context.TODO(), instance)
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
 
-	deploy := &appsv1.Deployment{}
-	g.Eventually(func() error { return c.Get(context.TODO(), depKey, deploy) }, timeout).
-		Should(gomega.Succeed())
+	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expected)))
 
-	// Delete the Deployment and expect Reconcile to be called for Deployment deletion
-	g.Expect(c.Delete(context.TODO(), deploy)).NotTo(gomega.HaveOccurred())
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
-	g.Eventually(func() error { return c.Get(context.TODO(), depKey, deploy) }, timeout).
-		Should(gomega.Succeed())
+	pipeline := &v1alpha1.Pipeline{}
+	g.Expect(c.Get(context.TODO(), expected.NamespacedName, pipeline)).To(gomega.Succeed())
 
-	// Manually delete Deployment since GC isn't enabled in the test control plane
-	g.Expect(c.Delete(context.TODO(), deploy)).To(gomega.Succeed())
-
+	eventType := instance.Spec.Trigger.Event.Type
+	g.Expect(pipeline.ObjectMeta.Labels[v1alpha1.LabelEventType]).To(gomega.Equal(eventType))
 }
