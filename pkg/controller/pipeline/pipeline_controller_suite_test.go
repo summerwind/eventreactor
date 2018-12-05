@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/onsi/gomega"
 	"github.com/summerwind/eventreactor/pkg/apis"
@@ -36,7 +37,8 @@ var cfg *rest.Config
 
 func TestMain(m *testing.M) {
 	t := &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "config", "crds")},
+		CRDDirectoryPaths:        []string{filepath.Join("..", "..", "..", "config", "crds")},
+		ControlPlaneStartTimeout: 60 * time.Second,
 	}
 	apis.AddToScheme(scheme.Scheme)
 
