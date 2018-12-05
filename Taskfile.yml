@@ -8,7 +8,7 @@ tasks:
   default:
     deps: [build]
   test:
-    deps: [fmt, vet, generate, manifests]
+    deps: [generate, fmt, vet, manifests]
     cmds:
       - go test ./pkg/... ./cmd/... -coverprofile cover.out
   build:
