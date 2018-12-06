@@ -18,16 +18,17 @@ package event
 
 import (
 	"context"
+	"fmt"
 	"log"
-	"reflect"
+	"regexp"
 
-	eventreactorv1alpha1 "github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
-	appsv1 "k8s.io/api/apps/v1"
+	v1alpha1 "github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -37,14 +38,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
-
 // Add creates a new Event Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-// USER ACTION REQUIRED: update cmd/manager/main.go to call this eventreactor.Add(mgr) to install this Controller
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
 }
@@ -63,17 +58,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to Event
-	err = c.Watch(&source.Kind{Type: &eventreactorv1alpha1.Event{}}, &handler.EnqueueRequestForObject{})
-	if err != nil {
-		return err
-	}
-
-	// TODO(user): Modify this to be the types you create
-	// Uncomment watch a Deployment created by Event - change this for objects you create
-	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &eventreactorv1alpha1.Event{},
-	})
+	err = c.Watch(&source.Kind{Type: &v1alpha1.Event{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -91,14 +76,12 @@ type ReconcileEvent struct {
 
 // Reconcile reads that state of the cluster for a Event object and makes changes based on the state read
 // and what is in the Event.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
-// a Deployment as an example
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
-// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=eventreactor.summerwind.github.io,resources=events,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=eventreactor.summerwind.github.io,resources=actions,verbs=get;list;watch;create
 func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the Event instance
-	instance := &eventreactorv1alpha1.Event{}
+	instance := &v1alpha1.Event{}
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -110,57 +93,105 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 		return reconcile.Result{}, err
 	}
 
-	// TODO(user): Change this to be the object type created by your controller
-	// Define the desired Deployment object
-	deploy := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      instance.Name + "-deployment",
-			Namespace: instance.Namespace,
-		},
-		Spec: appsv1.DeploymentSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"deployment": instance.Name + "-deployment"},
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"deployment": instance.Name + "-deployment"}},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  "nginx",
-							Image: "nginx",
-						},
-					},
-				},
-			},
-		},
-	}
-	if err := controllerutil.SetControllerReference(instance, deploy, r.scheme); err != nil {
+	pipelineList := &v1alpha1.PipelineList{}
+
+	labels := map[string]string{}
+	labels[v1alpha1.LabelEventType] = instance.Spec.EventType
+
+	opts := &client.ListOptions{Namespace: instance.Namespace}
+	opts = opts.MatchingLabels(labels)
+
+	err = r.List(context.TODO(), opts, pipelineList)
+	if err != nil {
+		// Error reading pipelines. Requeue the request.
 		return reconcile.Result{}, err
 	}
 
-	// TODO(user): Change this for the object type created by your controller
-	// Check if the Deployment already exists
-	found := &appsv1.Deployment{}
-	err = r.Get(context.TODO(), types.NamespacedName{Name: deploy.Name, Namespace: deploy.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
-		log.Printf("Creating Deployment %s/%s\n", deploy.Namespace, deploy.Name)
-		err = r.Create(context.TODO(), deploy)
+	for _, pipeline := range pipelineList.Items {
+		if pipeline.Spec.Trigger.Event.Type != instance.Spec.EventType {
+			log.Printf("Event type mismatched: %s", pipeline.Name)
+			continue
+		}
+
+		matched, err := regexp.MatchString(pipeline.Spec.Trigger.Event.Source, instance.Spec.Source)
+		if err != nil {
+			log.Printf("Invalid source pattern: %s - %v", pipeline.Name, err)
+			continue
+		}
+		if !matched {
+			continue
+		}
+
+		action := r.newAction(instance, &pipeline)
+		err = controllerutil.SetControllerReference(&pipeline, action, r.scheme)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
-	} else if err != nil {
-		return reconcile.Result{}, err
+
+		actionKey := types.NamespacedName{
+			Name:      action.Name,
+			Namespace: action.Namespace,
+		}
+
+		err = r.Get(context.TODO(), actionKey, action)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				log.Printf("Creating Action %s/%s\n", action.Namespace, action.Name)
+				err = r.Create(context.TODO(), action)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+			} else if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
 	}
 
-	// TODO(user): Change this for the object type created by your controller
-	// Update the found object and write the result back if there are any changes
-	if !reflect.DeepEqual(deploy.Spec, found.Spec) {
-		found.Spec = deploy.Spec
-		log.Printf("Updating Deployment %s/%s\n", deploy.Namespace, deploy.Name)
-		err = r.Update(context.TODO(), found)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	}
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileEvent) newAction(ev *v1alpha1.Event, pipeline *v1alpha1.Pipeline) *v1alpha1.Action {
+	name := fmt.Sprintf("%s-%s", ev.Name, pipeline.Name)
+
+	envVars := []corev1.EnvVar{
+		corev1.EnvVar{
+			Name:  "EVENTREACTOR_EVENT_NAME",
+			Value: ev.Name,
+		},
+		corev1.EnvVar{
+			Name:  "EVENTREACTOR_PIPELINE_NAME",
+			Value: pipeline.Name,
+		},
+		corev1.EnvVar{
+			Name:  "EVENTREACTOR_ACTION_NAME",
+			Value: name,
+		},
+	}
+
+	buildSpec := pipeline.Spec.BuildSpec.DeepCopy()
+
+	for i, _ := range buildSpec.Steps {
+		buildSpec.Steps[i].Env = append(buildSpec.Steps[i].Env, envVars...)
+	}
+	if buildSpec.Template != nil {
+		buildSpec.Template.Env = append(buildSpec.Template.Env, envVars...)
+	}
+
+	labels := map[string]string{
+		v1alpha1.LabelEventName:    ev.Name,
+		v1alpha1.LabelPipelineName: pipeline.Name,
+	}
+
+	action := &v1alpha1.Action{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-%s", ev.Name, pipeline.Name),
+			Namespace: pipeline.Namespace,
+			Labels:    labels,
+		},
+		Spec: v1alpha1.ActionSpec{
+			BuildSpec: *buildSpec,
+		},
+	}
+
+	return action
 }
