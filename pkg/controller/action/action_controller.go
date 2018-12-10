@@ -18,16 +18,12 @@ package action
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"reflect"
 
-	eventreactorv1alpha1 "github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -35,16 +31,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-)
 
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
+	buildv1alpha1 "github.com/knative/build/pkg/apis/build/v1alpha1"
+	buildscheme "github.com/knative/build/pkg/client/clientset/versioned/scheme"
+	"github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 // Add creates a new Action Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-// USER ACTION REQUIRED: update cmd/manager/main.go to call this eventreactor.Add(mgr) to install this Controller
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
 }
@@ -56,6 +52,9 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
+	// Setup Scheme for knative build resources
+	buildscheme.AddToScheme(mgr.GetScheme())
+
 	// Create a new controller
 	c, err := controller.New("action-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
@@ -63,18 +62,18 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to Action
-	err = c.Watch(&source.Kind{Type: &eventreactorv1alpha1.Action{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &v1alpha1.Action{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
-	// TODO(user): Modify this to be the types you create
-	// Uncomment watch a Deployment created by Action - change this for objects you create
-	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
+	// Watch for changes to Build
+	err = c.Watch(&source.Kind{Type: &buildv1alpha1.Build{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &eventreactorv1alpha1.Action{},
+		OwnerType:    &v1alpha1.Action{},
 	})
 	if err != nil {
+		fmt.Printf("%v\n", err)
 		return err
 	}
 
@@ -91,14 +90,11 @@ type ReconcileAction struct {
 
 // Reconcile reads that state of the cluster for a Action object and makes changes based on the state read
 // and what is in the Action.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
-// a Deployment as an example
-// Automatically generate RBAC rules to allow the Controller to read and write Deployments
-// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=eventreactor.summerwind.github.io,resources=actions,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=build.knative.dev,resources=build,verbs=get;list;watch;create;update;patch
 func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the Action instance
-	instance := &eventreactorv1alpha1.Action{}
+	instance := &v1alpha1.Action{}
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -110,57 +106,56 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 		return reconcile.Result{}, err
 	}
 
-	// TODO(user): Change this to be the object type created by your controller
-	// Define the desired Deployment object
-	deploy := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      instance.Name + "-deployment",
-			Namespace: instance.Namespace,
-		},
-		Spec: appsv1.DeploymentSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"deployment": instance.Name + "-deployment"},
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"deployment": instance.Name + "-deployment"}},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  "nginx",
-							Image: "nginx",
-						},
-					},
-				},
-			},
-		},
+	cond := instance.Status.GetCondition(buildv1alpha1.BuildSucceeded)
+	if cond != nil && cond.Status != corev1.ConditionUnknown {
+		return reconcile.Result{}, nil
 	}
-	if err := controllerutil.SetControllerReference(instance, deploy, r.scheme); err != nil {
+
+	build := r.newBuild(instance)
+	err = controllerutil.SetControllerReference(instance, build, r.scheme)
+	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// TODO(user): Change this for the object type created by your controller
-	// Check if the Deployment already exists
-	found := &appsv1.Deployment{}
-	err = r.Get(context.TODO(), types.NamespacedName{Name: deploy.Name, Namespace: deploy.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
-		log.Printf("Creating Deployment %s/%s\n", deploy.Namespace, deploy.Name)
-		err = r.Create(context.TODO(), deploy)
-		if err != nil {
+	err = r.Get(context.TODO(), request.NamespacedName, build)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			log.Printf("Creating Build %s/%s\n", build.Namespace, build.Name)
+			err = r.Create(context.TODO(), build)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+
+			return reconcile.Result{}, nil
+		} else if err != nil {
 			return reconcile.Result{}, err
 		}
-	} else if err != nil {
-		return reconcile.Result{}, err
 	}
 
-	// TODO(user): Change this for the object type created by your controller
-	// Update the found object and write the result back if there are any changes
-	if !reflect.DeepEqual(deploy.Spec, found.Spec) {
-		found.Spec = deploy.Spec
-		log.Printf("Updating Deployment %s/%s\n", deploy.Namespace, deploy.Name)
-		err = r.Update(context.TODO(), found)
+	if !reflect.DeepEqual(instance.Status.BuildStatus, build.Status) {
+		action := instance.DeepCopy()
+		action.Status.BuildStatus = build.Status
+
+		log.Printf("Updating Action %s/%s\n", action.Namespace, action.Name)
+		err = r.Update(context.TODO(), action)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 	}
+
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileAction) newBuild(action *v1alpha1.Action) *buildv1alpha1.Build {
+	buildSpec := action.Spec.BuildSpec.DeepCopy()
+
+	build := &buildv1alpha1.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      action.ObjectMeta.Name,
+			Namespace: action.Namespace,
+		},
+		Spec: *buildSpec,
+	}
+
+	return build
 }

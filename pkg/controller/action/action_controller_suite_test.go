@@ -37,7 +37,10 @@ var cfg *rest.Config
 
 func TestMain(m *testing.M) {
 	t := &envtest.Environment{
-		CRDDirectoryPaths:        []string{filepath.Join("..", "..", "..", "config", "crds")},
+		CRDDirectoryPaths: []string{
+			filepath.Join("..", "..", "..", "config", "crds"),
+			filepath.Join("..", "..", "..", "config", "knative"),
+		},
 		ControlPlaneStartTimeout: 60 * time.Second,
 	}
 	apis.AddToScheme(scheme.Scheme)

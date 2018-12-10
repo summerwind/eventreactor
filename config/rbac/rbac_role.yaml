@@ -5,18 +5,6 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - apps
-  resources:
-  - deployments
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
   - eventreactor.summerwind.github.io
   resources:
   - actions
@@ -28,6 +16,17 @@ rules:
   - update
   - patch
   - delete
+- apiGroups:
+  - build.knative.dev
+  resources:
+  - build
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
 - apiGroups:
   - eventreactor.summerwind.github.io
   resources:
