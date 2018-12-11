@@ -2,19 +2,24 @@
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
 
-all: test manager
+all: test binary
 
 # Run tests
 test: generate fmt vet manifests
 	go test ./pkg/... ./cmd/... -coverprofile cover.out
 
-# Build manager binary
-manager: generate fmt vet
+# Build binary
+binary: generate fmt vet
 	go build -o bin/manager github.com/summerwind/eventreactor/cmd/manager
+	go build -o bin/apiserver github.com/summerwind/eventreactor/cmd/apiserver
 
-# Run against the configured Kubernetes cluster in ~/.kube/config
-run: generate fmt vet
+# Run manager against the configured Kubernetes cluster in ~/.kube/config
+manager: generate fmt vet
 	go run ./cmd/manager/main.go
+
+# Run apiserver against the configured Kubernetes cluster in ~/.kube/config
+apiserver: generate fmt vet
+	go run ./cmd/apiserver/main.go
 
 # Install CRDs into a cluster
 install: manifests
