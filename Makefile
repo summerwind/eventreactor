@@ -1,7 +1,3 @@
-
-# Image URL to use all building/pushing image targets
-IMG ?= controller:latest
-
 all: test binary
 
 # Run tests
@@ -12,6 +8,7 @@ test: generate fmt vet manifests
 binary: generate fmt vet
 	go build -o bin/manager github.com/summerwind/eventreactor/cmd/manager
 	go build -o bin/apiserver github.com/summerwind/eventreactor/cmd/apiserver
+	go build -o bin/event-init github.com/summerwind/eventreactor/cmd/event-init
 
 # Run manager against the configured Kubernetes cluster in ~/.kube/config
 manager: generate fmt vet
@@ -48,10 +45,12 @@ generate:
 
 # Build the docker image
 docker-build: test
-	docker build . -t ${IMG}
-	@echo "updating kustomize image patch file for manager resource"
-	sed -i'' -e 's@image: .*@image: '"${IMG}"'@' ./config/default/manager_image_patch.yaml
+	docker build -t summerwind/eventreactor-controller:latest -f container/manager/Dockerfile .
+	docker build -t summerwind/eventreactor-apiserver:latest -f container/apiserver/Dockerfile .
+	docker build -t summerwind/event-init:latest -f container/event-init/Dockerfile .
 
 # Push the docker image
 docker-push:
-	docker push ${IMG}
+	docker build -t summerwind/eventreactor-controller:latest
+	docker build -t summerwind/eventreactor-apiserver:latest
+	docker build -t summerwind/event-init:latest
