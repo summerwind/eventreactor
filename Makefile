@@ -1,3 +1,9 @@
+VERSION = 0.1.0
+
+NAME_CONTROLLER := summerwind/eventreactor-controller
+NAME_APISERVER  := summerwind/eventreactor-apiserver
+NAME_EVENT_INIT := summerwind/event-init
+
 all: test binary
 
 # Run tests
@@ -45,12 +51,16 @@ generate:
 
 # Build the docker image
 docker-build: test
-	docker build -t summerwind/eventreactor-controller:latest -f container/manager/Dockerfile .
-	docker build -t summerwind/eventreactor-apiserver:latest -f container/apiserver/Dockerfile .
-	docker build -t summerwind/event-init:latest -f container/event-init/Dockerfile .
+	docker build -t $(NAME_CONTROLLER):latest -t $(NAME_CONTROLLER):$(VERSION) -f container/manager/Dockerfile .
+	docker build -t $(NAME_APISERVER):latest  -t $(NAME_APISERVER):$(VERSION)  -f container/apiserver/Dockerfile .
+	docker build -t $(NAME_EVENT_INIT):latest -t $(NAME_EVENT_INIT):$(VERSION) -f container/event-init/Dockerfile .
 
 # Push the docker image
 docker-push:
-	docker build -t summerwind/eventreactor-controller:latest
-	docker build -t summerwind/eventreactor-apiserver:latest
-	docker build -t summerwind/event-init:latest
+	docker push $(NAME_CONTROLLER):latest
+	docker push $(NAME_CONTROLLER):$(VERSION)
+	docker push $(NAME_APISERVER):latest
+	docker push $(NAME_APISERVER):$(VERSION)
+	docker push $(NAME_EVENT_INIT):latest
+	docker push $(NAME_EVENT_INIT):$(VERSION)
+
