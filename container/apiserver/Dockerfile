@@ -14,4 +14,4 @@ FROM scratch
 
 COPY --from=builder /go/src/github.com/summerwind/eventreactor/apiserver /bin/apiserver
 
-CMD ["/bin/apiserver"]
+ENTRYPOINT ["/bin/apiserver"]

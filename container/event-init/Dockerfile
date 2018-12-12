@@ -14,4 +14,4 @@ FROM scratch
 
 COPY --from=builder /go/src/github.com/summerwind/eventreactor/event-init /bin/event-init
 
-CMD ["/bin/event-init"]
+ENTRYPOINT ["/bin/event-init"]

@@ -14,4 +14,4 @@ FROM scratch
 
 COPY --from=builder /go/src/github.com/summerwind/eventreactor/manager /bin/manager
 
-CMD ["/bin/manager"]
+ENTRYPOINT ["/bin/manager"]
