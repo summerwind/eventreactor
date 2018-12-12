@@ -25,7 +25,7 @@ var (
 )
 
 const (
-	eventDefaultPath = "/mnt/event"
+	eventDefaultPath = "/builder/home/event"
 )
 
 func run(cmd *cobra.Command, args []string) error {
@@ -100,14 +100,26 @@ func run(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	dataPath := filepath.Join(baseDir, "data")
-	err = ioutil.WriteFile(dataPath, []byte(ev.Spec.Data), 0644)
+	typePath := filepath.Join(baseDir, "type")
+	err = ioutil.WriteFile(typePath, []byte(ev.Spec.EventType), 0644)
+	if err != nil {
+		return err
+	}
+
+	sourcePath := filepath.Join(baseDir, "source")
+	err = ioutil.WriteFile(sourcePath, []byte(ev.Spec.Source), 0644)
 	if err != nil {
 		return err
 	}
 
 	contentTypePath := filepath.Join(baseDir, "content-type")
 	err = ioutil.WriteFile(contentTypePath, []byte(ev.Spec.ContentType), 0644)
+	if err != nil {
+		return err
+	}
+
+	dataPath := filepath.Join(baseDir, "data")
+	err = ioutil.WriteFile(dataPath, []byte(ev.Spec.Data), 0644)
 	if err != nil {
 		return err
 	}
