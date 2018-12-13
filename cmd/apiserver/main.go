@@ -78,7 +78,7 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 
 	ev := &v1alpha1.Event{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
+			Namespace: namespace,
 			Name:      name,
 			Labels: map[string]string{
 				v1alpha1.LabelEventType: eventType,
@@ -208,7 +208,7 @@ func main() {
 		SilenceUsage:  true,
 	}
 
-	cmd.Flags().StringP("namespace", "n", "default", "The namespace to manage resources")
+	cmd.Flags().StringP("namespace", "n", "default", "The namespace to create Event resources")
 	cmd.Flags().String("bind-address", "0.0.0.0", "The IP address on which to listen")
 	cmd.Flags().Int("port", 14380, "The port on which to listen")
 	cmd.Flags().String("tls-cert-file", "", "File containing the default x509 Certificate for HTTPS")
