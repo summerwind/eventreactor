@@ -19,26 +19,11 @@ import (
 	"github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
 )
 
-var (
-	VERSION = "0.0.1"
-	COMMIT  = "HEAD"
-)
-
 const (
 	eventDefaultPath = "/builder/home/event"
 )
 
 func run(cmd *cobra.Command, args []string) error {
-	v, err := cmd.Flags().GetBool("version")
-	if err != nil {
-		return err
-	}
-
-	if v {
-		fmt.Printf("%s (%s)\n", VERSION, COMMIT)
-		return nil
-	}
-
 	namespace, err := cmd.Flags().GetString("namespace")
 	if err != nil {
 		return err
@@ -140,7 +125,6 @@ func main() {
 	cmd.Flags().StringP("namespace", "n", "default", "The namespace")
 	cmd.Flags().StringP("event", "e", "", "The event name")
 	cmd.Flags().StringP("path", "p", eventDefaultPath, "The path of event file")
-	cmd.Flags().BoolP("version", "v", false, "Display version information and exit")
 
 	err := cmd.Execute()
 	if err != nil {

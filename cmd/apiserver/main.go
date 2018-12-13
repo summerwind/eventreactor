@@ -26,11 +26,6 @@ import (
 )
 
 var (
-	VERSION = "0.0.1"
-	COMMIT  = "HEAD"
-)
-
-var (
 	namespace string
 	c         client.Client
 	entropy   *rand.Rand
@@ -113,15 +108,7 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	v, err := cmd.Flags().GetBool("version")
-	if err != nil {
-		return err
-	}
-
-	if v {
-		fmt.Printf("%s (%s)\n", VERSION, COMMIT)
-		return nil
-	}
+	var err error
 
 	namespace, err = cmd.Flags().GetString("namespace")
 	if err != nil {
@@ -213,7 +200,6 @@ func main() {
 	cmd.Flags().Int("port", 14380, "The port on which to listen")
 	cmd.Flags().String("tls-cert-file", "", "File containing the default x509 Certificate for HTTPS")
 	cmd.Flags().String("tls-private-key-file", "", "File containing the default x509 private key matching --tls-cert-file")
-	cmd.Flags().BoolP("version", "v", false, "Display version information and exit")
 
 	err := cmd.Execute()
 	if err != nil {
