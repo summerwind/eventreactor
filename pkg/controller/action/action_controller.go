@@ -19,11 +19,14 @@ package action
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"reflect"
+	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -47,7 +50,11 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileAction{Client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileAction{
+		Client: mgr.GetClient(),
+		scheme: mgr.GetScheme(),
+		api:    kubernetes.NewForConfigOrDie(mgr.GetConfig()),
+	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -86,6 +93,7 @@ var _ reconcile.Reconciler = &ReconcileAction{}
 type ReconcileAction struct {
 	client.Client
 	scheme *runtime.Scheme
+	api    kubernetes.Interface
 }
 
 // Reconcile reads that state of the cluster for a Action object and makes changes based on the state read
@@ -120,7 +128,7 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 	err = r.Get(context.TODO(), request.NamespacedName, build)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			log.Printf("Creating Build %s/%s\n", build.Namespace, build.Name)
+			log.Printf("Creating Build %s/%s", build.Namespace, build.Name)
 			err = r.Create(context.TODO(), build)
 			if err != nil {
 				return reconcile.Result{}, err
@@ -132,11 +140,29 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 		}
 	}
 
+	// Sync build status
 	if !reflect.DeepEqual(instance.Status.BuildStatus, build.Status) {
 		action := instance.DeepCopy()
 		action.Status.BuildStatus = build.Status
 
-		log.Printf("Updating Action %s/%s\n", action.Namespace, action.Name)
+		// Get step logs
+		if build.Status.Cluster != nil {
+			for i, stepName := range build.Status.StepsCompleted {
+				if len(action.Status.StepLogs) > i {
+					continue
+				}
+
+				stepLog, err := r.getStepLog(build.Status.Cluster.Namespace, build.Status.Cluster.PodName, stepName)
+				if err != nil {
+					log.Printf("Unable to get step log: %s/%s - %v", build.Name, stepName, err)
+					continue
+				}
+
+				action.Status.StepLogs = append(action.Status.StepLogs, stepLog)
+			}
+		}
+
+		log.Printf("Updating Action %s/%s", action.Namespace, action.Name)
 		err = r.Update(context.TODO(), action)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -158,4 +184,22 @@ func (r *ReconcileAction) newBuild(action *v1alpha1.Action) *buildv1alpha1.Build
 	}
 
 	return build
+}
+
+func (r *ReconcileAction) getStepLog(namespace, podName, containerName string) (string, error) {
+	opts := &corev1.PodLogOptions{Container: containerName}
+	req := r.api.CoreV1().Pods(namespace).GetLogs(podName, opts)
+
+	readCloser, err := req.Timeout(5 * time.Minute).Stream()
+	if err != nil {
+		return "", err
+	}
+	defer readCloser.Close()
+
+	b, err := ioutil.ReadAll(readCloser)
+	if err != nil {
+		return "", err
+	}
+
+	return string(b), nil
 }
