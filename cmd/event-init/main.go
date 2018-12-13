@@ -101,7 +101,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	typePath := filepath.Join(baseDir, "type")
-	err = ioutil.WriteFile(typePath, []byte(ev.Spec.EventType), 0644)
+	err = ioutil.WriteFile(typePath, []byte(ev.Spec.Type), 0644)
 	if err != nil {
 		return err
 	}

@@ -22,28 +22,28 @@ spec:
           type: object
         spec:
           properties:
-            cloudEventsVersion:
-              type: string
             contentType:
               type: string
             data:
               type: string
-            eventID:
+            id:
               type: string
-            eventTime:
-              format: date-time
-              type: string
-            eventType:
-              type: string
-            eventTypeVersion:
+            schemeURL:
               type: string
             source:
               type: string
+            specVersion:
+              type: string
+            time:
+              format: date-time
+              type: string
+            type:
+              type: string
           required:
-          - cloudEventsVersion
-          - eventID
-          - eventType
+          - specVersion
+          - type
           - source
+          - id
           type: object
         status:
           type: object

@@ -96,7 +96,7 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 	pipelineList := &v1alpha1.PipelineList{}
 
 	labels := map[string]string{}
-	labels[v1alpha1.LabelEventType] = instance.Spec.EventType
+	labels[v1alpha1.LabelEventType] = instance.Spec.Type
 
 	opts := &client.ListOptions{Namespace: instance.Namespace}
 	opts = opts.MatchingLabels(labels)
@@ -108,7 +108,7 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 	}
 
 	for _, pipeline := range pipelineList.Items {
-		if pipeline.Spec.Trigger.Event.Type != instance.Spec.EventType {
+		if pipeline.Spec.Trigger.Event.Type != instance.Spec.Type {
 			log.Printf("Event type mismatched: %s", pipeline.Name)
 			continue
 		}
@@ -162,7 +162,7 @@ func (r *ReconcileEvent) newAction(ev *v1alpha1.Event, pipeline *v1alpha1.Pipeli
 		},
 		corev1.EnvVar{
 			Name:  "EVENTREACTOR_EVENT_TYPE",
-			Value: ev.Spec.EventType,
+			Value: ev.Spec.Type,
 		},
 		corev1.EnvVar{
 			Name:  "EVENTREACTOR_EVENT_SOURCE",

@@ -43,10 +43,10 @@ func TestReconcile(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1alpha1.EventSpec{
-			EventID:   "f378179e-7d49-4078-84ce-e529de6dfdca",
-			EventTime: metav1.Now(),
-			EventType: "io.github.summerwind.eventreactor.test",
-			Source:    "/eventreactor/test/*",
+			Type:   "io.github.summerwind.eventreactor.test",
+			Source: "/eventreactor/test/*",
+			ID:     "f378179e-7d49-4078-84ce-e529de6dfdca",
+			Time:   metav1.Now(),
 		},
 	}
 

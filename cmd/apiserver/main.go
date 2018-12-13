@@ -74,7 +74,7 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	eventType := r.Header.Get("CE-EventType")
+	eventType := r.Header.Get("CE-Type")
 
 	ev := &v1alpha1.Event{
 		ObjectMeta: metav1.ObjectMeta{
@@ -85,20 +85,20 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 		Spec: v1alpha1.EventSpec{
-			CloudEventsVersion: r.Header.Get("CE-CloudEventsVersion"),
-			EventID:            r.Header.Get("CE-EventID"),
-			EventType:          eventType,
-			EventTypeVersion:   r.Header.Get("CE-EventTypeVersion"),
-			Source:             r.Header.Get("CE-Source"),
-			ContentType:        r.Header.Get("ContentType"),
-			Data:               string(b),
+			SpecVersion: r.Header.Get("CE-SpecVersion"),
+			Type:        eventType,
+			Source:      r.Header.Get("CE-Source"),
+			ID:          r.Header.Get("CE-EventID"),
+			SchemaURL:   r.Header.Get("CE-SchemaURL"),
+			ContentType: r.Header.Get("Content-Type"),
+			Data:        string(b),
 		},
 	}
 
-	if r.Header.Get("CE-EventTime") != "" {
-		t, err := time.Parse(time.RFC3339, r.Header.Get("CE-EventTime"))
+	if r.Header.Get("CE-Time") != "" {
+		t, err := time.Parse(time.RFC3339, r.Header.Get("CE-Time"))
 		if err == nil {
-			ev.Spec.EventTime = metav1.NewTime(t)
+			ev.Spec.Time = metav1.NewTime(t)
 		}
 	}
 
