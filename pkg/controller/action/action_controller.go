@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"reflect"
 	"time"
 
@@ -33,8 +32,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	"github.com/go-logr/logr"
 	buildv1alpha1 "github.com/knative/build/pkg/apis/build/v1alpha1"
 	buildscheme "github.com/knative/build/pkg/client/clientset/versioned/scheme"
 	"github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
@@ -54,6 +55,7 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 		Client: mgr.GetClient(),
 		scheme: mgr.GetScheme(),
 		api:    kubernetes.NewForConfigOrDie(mgr.GetConfig()),
+		log:    logf.Log.WithName("action-controller"),
 	}
 }
 
@@ -94,6 +96,7 @@ type ReconcileAction struct {
 	client.Client
 	scheme *runtime.Scheme
 	api    kubernetes.Interface
+	log    logr.Logger
 }
 
 // Reconcile reads that state of the cluster for a Action object and makes changes based on the state read
@@ -128,7 +131,7 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 	err = r.Get(context.TODO(), request.NamespacedName, build)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			log.Printf("Creating Build %s/%s", build.Namespace, build.Name)
+			r.log.Info("Creating build", "namespace", build.Namespace, "name", build.Name)
 			err = r.Create(context.TODO(), build)
 			if err != nil {
 				return reconcile.Result{}, err
@@ -154,7 +157,7 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 
 				stepLog, err := r.getStepLog(build.Status.Cluster.Namespace, build.Status.Cluster.PodName, stepName)
 				if err != nil {
-					log.Printf("Unable to get step log: %s/%s - %v", build.Name, stepName, err)
+					r.log.Error(err, "Unable to get step log", "build", build.Name, "step", stepName)
 					continue
 				}
 
@@ -162,7 +165,7 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 			}
 		}
 
-		log.Printf("Updating Action %s/%s", action.Namespace, action.Name)
+		r.log.Info("Updating action", "namespace", action.Namespace, "name", action.Name)
 		err = r.Update(context.TODO(), action)
 		if err != nil {
 			return reconcile.Result{}, err

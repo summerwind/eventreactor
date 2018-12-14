@@ -19,23 +19,24 @@ package event
 import (
 	"context"
 	"fmt"
-	"log"
 	"regexp"
-
-	v1alpha1 "github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	"github.com/go-logr/logr"
+	"github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Add creates a new Event Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
@@ -46,7 +47,11 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileEvent{Client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileEvent{
+		Client: mgr.GetClient(),
+		scheme: mgr.GetScheme(),
+		log:    logf.Log.WithName("event-controller"),
+	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -72,6 +77,7 @@ var _ reconcile.Reconciler = &ReconcileEvent{}
 type ReconcileEvent struct {
 	client.Client
 	scheme *runtime.Scheme
+	log    logr.Logger
 }
 
 // Reconcile reads that state of the cluster for a Event object and makes changes based on the state read
@@ -109,13 +115,13 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 
 	for _, pipeline := range pipelineList.Items {
 		if pipeline.Spec.Trigger.Event.Type != instance.Spec.Type {
-			log.Printf("Event type mismatched: %s", pipeline.Name)
+			r.log.Info("Mismatched event label", "pipeline", pipeline.Name)
 			continue
 		}
 
 		matched, err := regexp.MatchString(pipeline.Spec.Trigger.Event.Source, instance.Spec.Source)
 		if err != nil {
-			log.Printf("Invalid source pattern: %s - %v", pipeline.Name, err)
+			r.log.Error(err, "Invalid source pattern", "pipeline", pipeline.Name)
 			continue
 		}
 		if !matched {
@@ -125,6 +131,7 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 		action := r.newAction(instance, &pipeline)
 		err = controllerutil.SetControllerReference(&pipeline, action, r.scheme)
 		if err != nil {
+			r.log.Error(err, "Unable to set controller reference")
 			return reconcile.Result{}, err
 		}
 
@@ -136,7 +143,7 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 		err = r.Get(context.TODO(), actionKey, action)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				log.Printf("Creating Action %s/%s\n", action.Namespace, action.Name)
+				r.log.Info("Creating new action", "namespace", action.Namespace, "name", action.Name)
 				err = r.Create(context.TODO(), action)
 				if err != nil {
 					return reconcile.Result{}, err

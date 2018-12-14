@@ -18,9 +18,7 @@ package pipeline
 
 import (
 	"context"
-	"log"
 
-	v1alpha1 "github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -28,7 +26,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	"github.com/go-logr/logr"
+	"github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
 )
 
 // Add creates a new Pipeline Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
@@ -39,7 +41,11 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcilePipeline{Client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcilePipeline{
+		Client: mgr.GetClient(),
+		scheme: mgr.GetScheme(),
+		log:    logf.Log.WithName("pipeline-controller"),
+	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -65,6 +71,7 @@ var _ reconcile.Reconciler = &ReconcilePipeline{}
 type ReconcilePipeline struct {
 	client.Client
 	scheme *runtime.Scheme
+	log    logr.Logger
 }
 
 // Reconcile reads that state of the cluster for a Pipeline object and makes changes based on the state read
@@ -96,7 +103,7 @@ func (r *ReconcilePipeline) Reconcile(request reconcile.Request) (reconcile.Resu
 		}
 		pipeline.ObjectMeta.Labels[v1alpha1.LabelEventType] = eventType
 
-		log.Printf("Updating Pipeline %s/%s\n", pipeline.Namespace, pipeline.Name)
+		r.log.Info("Updating pipeline", "namespace", pipeline.Namespace, "name", pipeline.Name)
 		err = r.Update(context.TODO(), pipeline)
 		if err != nil {
 			return reconcile.Result{}, err
