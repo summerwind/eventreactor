@@ -42,6 +42,14 @@ rules:
 - apiGroups:
   - eventreactor.summerwind.github.io
   resources:
+  - pipelines
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - eventreactor.summerwind.github.io
+  resources:
   - actions
   verbs:
   - get

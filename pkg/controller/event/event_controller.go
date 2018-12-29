@@ -84,6 +84,7 @@ type ReconcileEvent struct {
 // and what is in the Event.Spec
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
 // +kubebuilder:rbac:groups=eventreactor.summerwind.github.io,resources=events,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=eventreactor.summerwind.github.io,resources=pipelines,verbs=get;list;watch
 // +kubebuilder:rbac:groups=eventreactor.summerwind.github.io,resources=actions,verbs=get;list;watch;create
 func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the Event instance
