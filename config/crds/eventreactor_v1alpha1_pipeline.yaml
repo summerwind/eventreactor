@@ -29,8 +29,12 @@ spec:
                 event:
                   properties:
                     source:
+                      minLength: 1
                       type: string
                     type:
+                      maxLength: 63
+                      minLength: 1
+                      pattern: ^[a-z0-9A-Z\-_.]+$
                       type: string
                   required:
                   - type

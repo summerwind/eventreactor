@@ -22,7 +22,12 @@ import (
 )
 
 type PipelineEventTrigger struct {
-	Type   string `json:"type"`
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=63
+	// +kubebuilder:validation:Pattern=^[a-z0-9A-Z\-_.]+$
+	Type string `json:"type"`
+
+	// +kubebuilder:validation:MinLength=1
 	Source string `json:"source"`
 }
 
