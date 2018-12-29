@@ -34,8 +34,8 @@ type EventSpec struct {
 
 // EventStatus defines the observed state of Event
 type EventStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Processed      bool         `json:"processed,omitempty"`
+	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
 }
 
 // +genclient

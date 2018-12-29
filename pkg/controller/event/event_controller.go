@@ -100,6 +100,10 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 		return reconcile.Result{}, err
 	}
 
+	if instance.Status.Processed {
+		return reconcile.Result{}, nil
+	}
+
 	pipelineList := &v1alpha1.PipelineList{}
 
 	labels := map[string]string{}
@@ -153,6 +157,16 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 				return reconcile.Result{}, err
 			}
 		}
+	}
+
+	ct := metav1.Now()
+	instance.Status.Processed = true
+	instance.Status.CompletionTime = &ct
+
+	r.log.Info("Updating event", "namespace", instance.Namespace, "name", instance.Name)
+	err = r.Update(context.TODO(), instance)
+	if err != nil {
+		return reconcile.Result{}, err
 	}
 
 	return reconcile.Result{}, nil

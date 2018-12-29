@@ -46,6 +46,12 @@ spec:
           - id
           type: object
         status:
+          properties:
+            completionTime:
+              format: date-time
+              type: string
+            processed:
+              type: boolean
           type: object
   version: v1alpha1
 status:
