@@ -38,6 +38,7 @@ type ActionStatus struct {
 
 // Action is the Schema for the actions API
 // +k8s:openapi-gen=true
+// +kubebuilder:subresource:status
 type Action struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
