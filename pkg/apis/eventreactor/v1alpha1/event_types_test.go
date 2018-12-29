@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/onsi/gomega"
@@ -66,4 +68,163 @@ func TestStorageEvent(t *testing.T) {
 	// Test Delete
 	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
 	g.Expect(c.Get(context.TODO(), key, fetched)).To(gomega.HaveOccurred())
+}
+
+func TestSpecVersionValidation(t *testing.T) {
+	var tests = []struct {
+		specVersion string
+		valid       bool
+	}{
+		{"0.2", true},
+		{"0.1", false},
+		{"1.0", false},
+	}
+
+	g := gomega.NewGomegaWithT(t)
+
+	for i, test := range tests {
+		now := metav1.Now()
+		ev := &Event{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("spec-version-validation-%02d", i),
+				Namespace: "default",
+			},
+			Spec: EventSpec{
+				SpecVersion: test.specVersion,
+				Type:        "eventreactor.test",
+				Source:      "/eventreactor/apis/v1alpha1/events",
+				ID:          "4f6e2a13-592a-4c39-b4e4-b7194f4a4318",
+				Time:        &now,
+				ContentType: "application/json",
+				Data:        "{\"test\":true}",
+			},
+		}
+
+		err := c.Create(context.TODO(), ev)
+		if test.valid {
+			g.Expect(err).NotTo(gomega.HaveOccurred())
+		} else {
+			g.Expect(err).To(gomega.HaveOccurred())
+		}
+	}
+}
+
+func TestTypeValidation(t *testing.T) {
+	var tests = []struct {
+		t     string
+		valid bool
+	}{
+		{"foo-bar_baz.", true},
+		{strings.Repeat("n", 1), true},
+		{strings.Repeat("n", 63), true},
+		{"", false},
+		{strings.Repeat("n", 64), false},
+		{"foo/bar/baz", false},
+	}
+
+	g := gomega.NewGomegaWithT(t)
+
+	for i, test := range tests {
+		now := metav1.Now()
+		ev := &Event{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("type-validation-%02d", i),
+				Namespace: "default",
+			},
+			Spec: EventSpec{
+				SpecVersion: "0.2",
+				Type:        test.t,
+				Source:      "/eventreactor/apis/v1alpha1/events",
+				ID:          "4f6e2a13-592a-4c39-b4e4-b7194f4a4318",
+				Time:        &now,
+				ContentType: "application/json",
+				Data:        "{\"test\":true}",
+			},
+		}
+
+		err := c.Create(context.TODO(), ev)
+		if test.valid {
+			g.Expect(err).NotTo(gomega.HaveOccurred())
+		} else {
+			g.Expect(err).To(gomega.HaveOccurred())
+		}
+	}
+}
+
+func TestSourceValidation(t *testing.T) {
+	var tests = []struct {
+		source string
+		valid  bool
+	}{
+		{"/eventreactor/test", true},
+		{"/", true},
+		{"", false},
+	}
+
+	g := gomega.NewGomegaWithT(t)
+
+	for i, test := range tests {
+		now := metav1.Now()
+		ev := &Event{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("source-validation-%02d", i),
+				Namespace: "default",
+			},
+			Spec: EventSpec{
+				SpecVersion: "0.2",
+				Type:        "eventreactor.test",
+				Source:      test.source,
+				ID:          "4f6e2a13-592a-4c39-b4e4-b7194f4a4318",
+				Time:        &now,
+				ContentType: "application/json",
+				Data:        "{\"test\":true}",
+			},
+		}
+
+		err := c.Create(context.TODO(), ev)
+		if test.valid {
+			g.Expect(err).NotTo(gomega.HaveOccurred())
+		} else {
+			g.Expect(err).To(gomega.HaveOccurred())
+		}
+	}
+}
+
+func TestIDValidation(t *testing.T) {
+	var tests = []struct {
+		id    string
+		valid bool
+	}{
+		{"4f6e2a13-592a-4c39-b4e4-b7194f4a4318", true},
+		{"4", true},
+		{"", false},
+	}
+
+	g := gomega.NewGomegaWithT(t)
+
+	for i, test := range tests {
+		now := metav1.Now()
+		ev := &Event{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("id-validation-%02d", i),
+				Namespace: "default",
+			},
+			Spec: EventSpec{
+				SpecVersion: "0.2",
+				Type:        "eventreactor.test",
+				Source:      "/eventreactor/apis/v1alpha1/events",
+				ID:          test.id,
+				Time:        &now,
+				ContentType: "application/json",
+				Data:        "{\"test\":true}",
+			},
+		}
+
+		err := c.Create(context.TODO(), ev)
+		if test.valid {
+			g.Expect(err).NotTo(gomega.HaveOccurred())
+		} else {
+			g.Expect(err).To(gomega.HaveOccurred())
+		}
+	}
 }

@@ -22,10 +22,20 @@ import (
 
 // EventSpec defines the desired state of Event
 type EventSpec struct {
-	SpecVersion string       `json:"specVersion"`
-	Type        string       `json:"type"`
-	Source      string       `json:"source"`
-	ID          string       `json:"id"`
+	// +kubebuilder:validation:Enum=0.2
+	SpecVersion string `json:"specVersion"`
+
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=63
+	// +kubebuilder:validation:Pattern=^[a-z0-9A-Z\-_.]+$
+	Type string `json:"type"`
+
+	// +kubebuilder:validation:MinLength=1
+	Source string `json:"source"`
+
+	// +kubebuilder:validation:MinLength=1
+	ID string `json:"id"`
+
 	Time        *metav1.Time `json:"time,omitempty"`
 	SchemaURL   string       `json:"schemeURL,omitempty"`
 	ContentType string       `json:"contentType,omitempty"`

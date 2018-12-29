@@ -27,17 +27,24 @@ spec:
             data:
               type: string
             id:
+              minLength: 1
               type: string
             schemeURL:
               type: string
             source:
+              minLength: 1
               type: string
             specVersion:
+              enum:
+              - "0.2"
               type: string
             time:
               format: date-time
               type: string
             type:
+              maxLength: 63
+              minLength: 1
+              pattern: ^[a-z0-9A-Z\-_.]+$
               type: string
           required:
           - specVersion
