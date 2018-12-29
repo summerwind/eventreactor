@@ -26,6 +26,7 @@ import (
 )
 
 func TestStorageEvent(t *testing.T) {
+	now := metav1.Now()
 	key := types.NamespacedName{
 		Name:      "foo",
 		Namespace: "default",
@@ -40,7 +41,7 @@ func TestStorageEvent(t *testing.T) {
 			Type:        "eventreactor.test",
 			Source:      "/eventreactor/apis/v1alpha1/events",
 			ID:          "4f6e2a13-592a-4c39-b4e4-b7194f4a4318",
-			Time:        metav1.Now(),
+			Time:        &now,
 			ContentType: "application/json",
 			Data:        "{\"test\":true}",
 		},

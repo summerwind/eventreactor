@@ -93,7 +93,8 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("CE-Time") != "" {
 		t, err := time.Parse(time.RFC3339, r.Header.Get("CE-Time"))
 		if err == nil {
-			ev.Spec.Time = metav1.NewTime(t)
+			et := metav1.NewTime(t)
+			ev.Spec.Time = &et
 		}
 	}
 

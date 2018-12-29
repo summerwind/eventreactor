@@ -37,6 +37,7 @@ var c client.Client
 const timeout = time.Second * 5
 
 func TestReconcile(t *testing.T) {
+	now := metav1.Now()
 	instance := &v1alpha1.Event{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
@@ -46,7 +47,7 @@ func TestReconcile(t *testing.T) {
 			Type:   "io.github.summerwind.eventreactor.test",
 			Source: "/eventreactor/test/*",
 			ID:     "f378179e-7d49-4078-84ce-e529de6dfdca",
-			Time:   metav1.Now(),
+			Time:   &now,
 		},
 	}
 
