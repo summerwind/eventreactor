@@ -12,7 +12,7 @@ RUN CGO_ENABLED=0 go build -o bin/event-init github.com/summerwind/eventreactor/
 
 #################################################
 
-FROM scratch AS manager
+FROM scratch AS controller
 
 COPY --from=builder /go/src/github.com/summerwind/eventreactor/bin/manager /bin/manager
 

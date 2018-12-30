@@ -1,6 +1,6 @@
 VERSION = 0.1.0
 
-IMAGE_CONTROLLER     := summerwind/eventreactor-controller-manager
+IMAGE_CONTROLLER     := summerwind/eventreactor-controller
 IMAGE_EVENT_RECEIVER := summerwind/eventreactor-event-receiver
 IMAGE_EVENT_INIT     := summerwind/event-init
 
@@ -51,7 +51,7 @@ generate:
 
 # Build the docker image
 docker-build: test
-	docker build -t $(IMAGE_CONTROLLER):latest -t $(IMAGE_CONTROLLER):$(VERSION) --target manager .
+	docker build -t $(IMAGE_CONTROLLER):latest -t $(IMAGE_CONTROLLER):$(VERSION) --target controller .
 	docker build -t $(IMAGE_EVENT_RECEIVER):latest  -t $(IMAGE_EVENT_RECEIVER):$(VERSION)  --target event-receiver .
 	docker build -t $(IMAGE_EVENT_INIT):latest -t $(IMAGE_EVENT_INIT):$(VERSION) --target event-init .
 
