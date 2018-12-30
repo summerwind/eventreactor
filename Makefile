@@ -1,7 +1,7 @@
 VERSION = 0.1.0
 
 IMAGE_CONTROLLER := summerwind/eventreactor-controller-manager
-IMAGE_APISERVER  := summerwind/eventreactor-apiserver
+IMAGE_APISERVER  := summerwind/eventreactor-event-receiver
 IMAGE_EVENT_INIT := summerwind/event-init
 
 all: test binary
@@ -12,17 +12,17 @@ test: generate fmt vet manifests
 
 # Build binary
 binary: generate fmt vet
-	go build -o bin/manager github.com/summerwind/eventreactor/cmd/manager
-	go build -o bin/apiserver github.com/summerwind/eventreactor/cmd/apiserver
-	go build -o bin/event-init github.com/summerwind/eventreactor/cmd/event-init
+	CGO_ENABLED=0 go build -o bin/manager github.com/summerwind/eventreactor/cmd/manager
+	CGO_ENABLED=0 go build -o bin/event-receiver github.com/summerwind/eventreactor/cmd/event-receiver
+	CGO_ENABLED=0 go build -o bin/event-init github.com/summerwind/eventreactor/cmd/event-init
 
 # Run manager against the configured Kubernetes cluster in ~/.kube/config
 manager: generate fmt vet
 	go run ./cmd/manager/main.go
 
 # Run apiserver against the configured Kubernetes cluster in ~/.kube/config
-apiserver: generate fmt vet
-	go run ./cmd/apiserver/main.go
+event-receiver: generate fmt vet
+	go run ./cmd/event-receiver/main.go
 
 # Install CRDs into a cluster
 install: manifests
@@ -52,7 +52,7 @@ generate:
 # Build the docker image
 docker-build: test
 	docker build -t $(IMAGE_CONTROLLER):latest -t $(IMAGE_CONTROLLER):$(VERSION) --target manager .
-	docker build -t $(IMAGE_APISERVER):latest  -t $(IMAGE_APISERVER):$(VERSION)  --target apiserver .
+	docker build -t $(IMAGE_APISERVER):latest  -t $(IMAGE_APISERVER):$(VERSION)  --target event-receiver .
 	docker build -t $(IMAGE_EVENT_INIT):latest -t $(IMAGE_EVENT_INIT):$(VERSION) --target event-init .
 
 # Push the docker image

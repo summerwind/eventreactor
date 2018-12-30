@@ -188,8 +188,8 @@ func run(cmd *cobra.Command, args []string) error {
 
 func main() {
 	var cmd = &cobra.Command{
-		Use:   "apiserver",
-		Short: "Event Reactor API server.",
+		Use:   "event-receiver",
+		Short: "Event receiver for Event Reactor",
 		RunE:  run,
 
 		SilenceErrors: true,

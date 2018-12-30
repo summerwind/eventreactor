@@ -2,12 +2,12 @@ FROM golang:1.11 as builder
 
 WORKDIR /go/src/github.com/summerwind/eventreactor
 
-COPY pkg/    pkg/
-COPY cmd/    cmd/
-COPY vendor/ vendor/
+COPY pkg/     pkg/
+COPY cmd/     cmd/
+COPY vendor/  vendor/
 
-RUN CGO_ENABLED=0 go build -o bin/manager    github.com/summerwind/eventreactor/cmd/manager
-RUN CGO_ENABLED=0 go build -o bin/apiserver  github.com/summerwind/eventreactor/cmd/apiserver
+RUN CGO_ENABLED=0 go build -o bin/manager github.com/summerwind/eventreactor/cmd/manager
+RUN CGO_ENABLED=0 go build -o bin/event-receiver github.com/summerwind/eventreactor/cmd/event-receiver
 RUN CGO_ENABLED=0 go build -o bin/event-init github.com/summerwind/eventreactor/cmd/event-init
 
 #################################################
@@ -20,11 +20,11 @@ ENTRYPOINT ["/bin/manager"]
 
 #################################################
 
-FROM scratch AS apiserver
+FROM scratch AS event-receiver
 
-COPY --from=builder /go/src/github.com/summerwind/eventreactor/bin/apiserver /bin/apiserver
+COPY --from=builder /go/src/github.com/summerwind/eventreactor/bin/event-receiver /bin/event-receiver
 
-ENTRYPOINT ["/bin/apiserver"]
+ENTRYPOINT ["/bin/event-receiver"]
 
 #################################################
 
