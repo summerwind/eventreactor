@@ -35,7 +35,8 @@ deploy: manifests
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests:
-	go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go all
+	go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go crd
+	go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go rbac --name eventreactor-controller
 
 # Run go fmt against code
 fmt:
@@ -58,9 +59,9 @@ docker-build: test
 # Push the docker image
 docker-push:
 	docker push $(IMAGE_CONTROLLER):latest
-	docker push $(IMAGE_CONTROLLER):$(VERSION)
+	#docker push $(IMAGE_CONTROLLER):$(VERSION)
 	docker push $(IMAGE_EVENT_RECEIVER):latest
-	docker push $(IMAGE_EVENT_RECEIVER):$(VERSION)
-	docker push $(IMAGE_EVENT_INIT):latest
-	docker push $(IMAGE_EVENT_INIT):$(VERSION)
+	#docker push $(IMAGE_EVENT_RECEIVER):$(VERSION)
+	#docker push $(IMAGE_EVENT_INIT):latest
+	#docker push $(IMAGE_EVENT_INIT):$(VERSION)
 
