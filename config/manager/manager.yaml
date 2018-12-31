@@ -1,82 +1,39 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  labels:
-    controller-tools.k8s.io: "1.0"
-  name: system
+  name: eventreactor-system
 ---
 apiVersion: v1
-kind: Service
+kind: ServiceAccount
 metadata:
-  name: controller-manager-service
-  namespace: system
-  labels:
-    control-plane: controller-manager
-    controller-tools.k8s.io: "1.0"
-spec:
-  selector:
-    control-plane: controller-manager
-    controller-tools.k8s.io: "1.0"
-  ports:
-  - port: 443
+  name: eventreactor-controller
+  namespace: eventreactor-system
 ---
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
-  name: controller-manager
-  namespace: system
-  labels:
-    control-plane: controller-manager
-    controller-tools.k8s.io: "1.0"
+  name: eventreactor-controller
+  namespace: eventreactor-system
 spec:
+  replicas: 1
   selector:
     matchLabels:
-      control-plane: controller-manager
-      controller-tools.k8s.io: "1.0"
-  serviceName: controller-manager-service
+      app: eventreactor-controller
   template:
     metadata:
       labels:
-        control-plane: controller-manager
-        controller-tools.k8s.io: "1.0"
+        app: eventreactor-controller
     spec:
       containers:
-      - command:
-        - /root/manager
-        image: controller:latest
+      - name: eventreactor-controller
+        image: summerwind/eventreactor-controller:latest
         imagePullPolicy: Always
-        name: manager
-        env:
-          - name: POD_NAMESPACE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
-          - name: SECRET_NAME
-            value: $(WEBHOOK_SECRET_NAME)
         resources:
-          limits:
-            cpu: 100m
-            memory: 30Mi
           requests:
             cpu: 100m
             memory: 20Mi
-        ports:
-        - containerPort: 9876
-          name: webhook-server
-          protocol: TCP
-        volumeMounts:
-        - mountPath: /tmp/cert
-          name: cert
-          readOnly: true
+          limits:
+            cpu: 100m
+            memory: 30Mi
+      serviceAccountName: eventreactor-controller
       terminationGracePeriodSeconds: 10
-      volumes:
-      - name: cert
-        secret:
-          defaultMode: 420
-          secretName: webhook-server-secret
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: webhook-server-secret
-  namespace: system
