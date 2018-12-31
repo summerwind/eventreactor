@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: eventreactor-event-receiver
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  creationTimestamp: null
+  name: eventreactor-event-receiver-role
+rules:
+- apiGroups:
+  - eventreactor.summerwind.github.io
+  resources:
+  - events
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  creationTimestamp: null
+  name: eventreactor-event-receiver-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: eventreactor-event-receiver-role
+subjects:
+- kind: ServiceAccount
+  name: eventreactor-event-receiver
+  namespace: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eventreactor-event-receiver
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eventreactor-event-receiver
+  template:
+    metadata:
+      labels:
+        app: eventreactor-event-receiver
+    spec:
+      containers:
+      - name: eventreactor-event-receiver
+        image: summerwind/eventreactor-event-receiver:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 14380
+        resources:
+          requests:
+            cpu: 100m
+            memory: 20Mi
+          limits:
+            cpu: 100m
+            memory: 30Mi
+      serviceAccountName: eventreactor-event-receiver
+      terminationGracePeriodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eventreactor-event-receiver
+  namespace: default
+spec:
+  type: LoadBalancer
+  selector:
+    app: eventreactor-event-receiver
+  ports:
+  - protocol: TCP
+    port: 14380
+    targetPort: 14380
