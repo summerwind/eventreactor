@@ -83,7 +83,7 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 			SpecVersion: r.Header.Get("CE-SpecVersion"),
 			Type:        eventType,
 			Source:      r.Header.Get("CE-Source"),
-			ID:          r.Header.Get("CE-EventID"),
+			ID:          r.Header.Get("CE-ID"),
 			SchemaURL:   r.Header.Get("CE-SchemaURL"),
 			ContentType: r.Header.Get("Content-Type"),
 			Data:        string(b),
