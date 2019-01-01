@@ -19,7 +19,7 @@ rules:
 - apiGroups:
   - build.knative.dev
   resources:
-  - build
+  - builds
   verbs:
   - get
   - list
@@ -27,6 +27,13 @@ rules:
   - create
   - update
   - patch
+- apiGroups:
+  - ""
+  resources:
+  - pods/log
+  verbs:
+  - get
+  - list
 - apiGroups:
   - eventreactor.summerwind.github.io
   resources:

@@ -102,7 +102,8 @@ type ReconcileAction struct {
 // Reconcile reads that state of the cluster for a Action object and makes changes based on the state read
 // and what is in the Action.Spec
 // +kubebuilder:rbac:groups=eventreactor.summerwind.github.io,resources=actions,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=build.knative.dev,resources=build,verbs=get;list;watch;create;update;patch
+// +kubebuilder:rbac:groups=build.knative.dev,resources=builds,verbs=get;list;watch;create;update;patch
+// +kubebuilder:rbac:groups=,resources=pods/log,verbs=get;list
 func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the Action instance
 	instance := &v1alpha1.Action{}
