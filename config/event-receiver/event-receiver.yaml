@@ -68,7 +68,6 @@ metadata:
   name: eventreactor-event-receiver
   namespace: default
 spec:
-  type: LoadBalancer
   selector:
     app: eventreactor-event-receiver
   ports:
