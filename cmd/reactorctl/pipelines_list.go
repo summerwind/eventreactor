@@ -12,12 +12,12 @@ import (
 	"github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
 )
 
-func NewPipelineListCommand() *cobra.Command {
+func NewPipelinesListCommand() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "list [flags]",
 		Short: "Print the list of pipeline",
 		Long:  "Print the list of pipeline.",
-		RunE:  pipelineListRun,
+		RunE:  pipelinesListRun,
 	}
 
 	flags := cmd.Flags()
@@ -26,7 +26,7 @@ func NewPipelineListCommand() *cobra.Command {
 	return cmd
 }
 
-func pipelineListRun(cmd *cobra.Command, args []string) error {
+func pipelinesListRun(cmd *cobra.Command, args []string) error {
 	selector := map[string]string{}
 
 	flags := cmd.Flags()

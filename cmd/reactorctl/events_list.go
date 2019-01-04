@@ -13,12 +13,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func NewEventListCommand() *cobra.Command {
+func NewEventsListCommand() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "list [flags]",
 		Short: "Print the list of event",
 		Long:  "Print the list of event.",
-		RunE:  eventListRun,
+		RunE:  eventsListRun,
 	}
 
 	flags := cmd.Flags()
@@ -28,7 +28,7 @@ func NewEventListCommand() *cobra.Command {
 	return cmd
 }
 
-func eventListRun(cmd *cobra.Command, args []string) error {
+func eventsListRun(cmd *cobra.Command, args []string) error {
 	var selector map[string]string
 
 	flags := cmd.Flags()

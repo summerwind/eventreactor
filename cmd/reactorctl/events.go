@@ -4,14 +4,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewEventCommand() *cobra.Command {
+func NewEventsCommand() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "events",
 		Short: "Manage event",
 		Long:  "Manage event.",
 	}
 
-	cmd.AddCommand(NewEventListCommand())
+	cmd.AddCommand(NewEventsListCommand())
 
 	return cmd
 }
