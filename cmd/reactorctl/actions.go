@@ -12,6 +12,7 @@ func NewActionsCommand() *cobra.Command {
 	}
 
 	cmd.AddCommand(NewActionsListCommand())
+	cmd.AddCommand(NewActionsGetCommand())
 
 	return cmd
 }
