@@ -65,6 +65,7 @@ func main() {
 	cmd.PersistentFlags().StringP("namespace", "n", "default", "The namespace")
 
 	cmd.AddCommand(NewEventCommand())
+	cmd.AddCommand(NewPipelineCommand())
 
 	err := cmd.Execute()
 	if err != nil {
