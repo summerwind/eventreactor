@@ -21,7 +21,9 @@ var (
 )
 
 func preRun(cmd *cobra.Command, args []string) error {
-	namespace, err := cmd.Flags().GetString("namespace")
+	var err error
+
+	namespace, err = cmd.Flags().GetString("namespace")
 	if err != nil {
 		return err
 	}
