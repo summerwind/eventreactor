@@ -7,12 +7,11 @@ import (
 func NewEventCommand() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "events",
-		Short: "Manage event resource",
-		Long:  "Manage event resource.",
+		Short: "Manage event",
+		Long:  "Manage event.",
 	}
 
 	cmd.AddCommand(NewEventListCommand())
-	//cmd.AddCommand(NewEventGetCommand())
 
 	return cmd
 }
