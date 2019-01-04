@@ -66,6 +66,7 @@ func main() {
 
 	cmd.AddCommand(NewEventCommand())
 	cmd.AddCommand(NewPipelineCommand())
+	cmd.AddCommand(NewActionsCommand())
 
 	err := cmd.Execute()
 	if err != nil {
