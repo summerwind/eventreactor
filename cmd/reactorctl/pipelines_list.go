@@ -27,7 +27,7 @@ func NewPipelineListCommand() *cobra.Command {
 }
 
 func pipelineListRun(cmd *cobra.Command, args []string) error {
-	var selector map[string]string
+	selector := map[string]string{}
 
 	flags := cmd.Flags()
 
