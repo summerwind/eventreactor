@@ -23,3 +23,8 @@ bin
 
 # Do not keep vendor
 vendor
+
+# Do not keep binary
+manager
+event-receiver
+reactorctl
