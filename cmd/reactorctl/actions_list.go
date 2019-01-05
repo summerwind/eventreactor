@@ -75,23 +75,14 @@ func actionsListRun(cmd *cobra.Command, args []string) error {
 		}
 
 		cond := a.Status.GetCondition(buildv1alpha1.BuildSucceeded)
-		status := "Unknown"
-
+		status := "Pending"
 		switch cond.Status {
 		case corev1.ConditionTrue:
 			status = "Succeeded"
 		case corev1.ConditionFalse:
-			if cond.Reason != "" {
-				status = cond.Reason
-			} else {
-				status = "Failed"
-			}
+			status = "Failed"
 		case corev1.ConditionUnknown:
-			if cond.Reason != "" {
-				status = cond.Reason
-			} else {
-				status = "Unknown"
-			}
+			status = "Running"
 		}
 
 		fmt.Fprintf(writer, "%s\t%s\t%s\n", a.Name, status, a.ObjectMeta.CreationTimestamp)
