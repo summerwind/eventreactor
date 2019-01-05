@@ -29,7 +29,7 @@ func NewEventsListCommand() *cobra.Command {
 }
 
 func eventsListRun(cmd *cobra.Command, args []string) error {
-	var selector map[string]string
+	selector := map[string]string{}
 
 	flags := cmd.Flags()
 
@@ -54,6 +54,11 @@ func eventsListRun(cmd *cobra.Command, args []string) error {
 	err = c.List(context.TODO(), opts, eventList)
 	if err != nil {
 		return err
+	}
+
+	if len(eventList.Items) == 0 {
+		fmt.Println("No resources found.")
+		return nil
 	}
 
 	writer := tabwriter.NewWriter(os.Stdout, 0, 8, 1, '\t', 0)

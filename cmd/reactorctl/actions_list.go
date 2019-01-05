@@ -66,6 +66,11 @@ func actionsListRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if len(actionList.Items) == 0 {
+		fmt.Println("No resources found.")
+		return nil
+	}
+
 	writer := tabwriter.NewWriter(os.Stdout, 0, 8, 1, '\t', 0)
 	fmt.Fprintln(writer, "NAME\tSTATUS\tDATE")
 
