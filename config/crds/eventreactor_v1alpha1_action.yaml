@@ -21,6 +21,23 @@ spec:
         metadata:
           type: object
         spec:
+          properties:
+            event:
+              type: string
+            pipeline:
+              properties:
+                generation:
+                  format: int64
+                  type: integer
+                name:
+                  type: string
+              required:
+              - name
+              - generation
+              type: object
+          required:
+          - event
+          - pipeline
           type: object
         status:
           properties:

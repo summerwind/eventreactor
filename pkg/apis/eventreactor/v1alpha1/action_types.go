@@ -21,9 +21,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type ActionSpecPipeline struct {
+	Name       string `json:"name"`
+	Generation int64  `json:"generation"`
+}
+
 // ActionSpec defines the desired state of Action
 type ActionSpec struct {
 	buildv1alpha1.BuildSpec
+
+	Event    string             `json:"event"`
+	Pipeline ActionSpecPipeline `json:"pipeline"`
 }
 
 // ActionStatus defines the observed state of Action

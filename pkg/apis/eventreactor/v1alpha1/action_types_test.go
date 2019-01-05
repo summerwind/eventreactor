@@ -29,12 +29,12 @@ import (
 
 func TestStorageAction(t *testing.T) {
 	key := types.NamespacedName{
-		Name:      "foo",
+		Name:      "7yjzp0t5g15329yr37n5q0qdh3-foo",
 		Namespace: "default",
 	}
 	created := &Action{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo",
+			Name:      "7yjzp0t5g15329yr37n5q0qdh3-foo",
 			Namespace: "default",
 		},
 		Spec: ActionSpec{
@@ -46,6 +46,11 @@ func TestStorageAction(t *testing.T) {
 						Args:  []string{"echo", "hello world"},
 					},
 				},
+			},
+			Event: "7yjzp0t5g15329yr37n5q0qdh3",
+			Pipeline: ActionSpecPipeline{
+				Name:       "foo",
+				Generation: 1,
 			},
 		},
 	}
