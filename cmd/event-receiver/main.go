@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -19,7 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
-	"github.com/oklog/ulid"
 	"github.com/spf13/cobra"
 	"github.com/summerwind/eventreactor/pkg/apis"
 	"github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
@@ -28,24 +25,11 @@ import (
 var (
 	namespace string
 	c         client.Client
-	entropy   *rand.Rand
 )
 
 // logError writes a meesage to stderr.
 func logError(msg string) {
 	fmt.Fprintln(os.Stderr, msg)
-}
-
-// newEventName returns a event name based on ULID.
-func newEventName() (string, error) {
-	t := ulid.MaxTime() - ulid.Now()
-
-	id, err := ulid.New(t, entropy)
-	if err != nil {
-		return "", err
-	}
-
-	return strings.ToLower(id.String()), nil
 }
 
 // eventHandler processes requests to submit an Event
@@ -62,7 +46,7 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	name, err := newEventName()
+	name, err := v1alpha1.NewEventName()
 	if err != nil {
 		logError(fmt.Sprintf("Failed to generate event name: %v", err))
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -151,9 +135,6 @@ func run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-
-	t := time.Now()
-	entropy = rand.New(rand.NewSource(t.UnixNano()))
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1alpha1/events", eventHandler)
