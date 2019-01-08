@@ -21,7 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type PipelineEventTrigger struct {
+type PipelineTriggerEvent struct {
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=63
 	// +kubebuilder:validation:Pattern=^[a-z0-9A-Z\-_.]+$
@@ -31,8 +31,14 @@ type PipelineEventTrigger struct {
 	Source string `json:"source"`
 }
 
+type PipelineTriggerPipeline struct {
+	Selector metav1.LabelSelector `json:"selector"`
+	Status   string               `json:"status"`
+}
+
 type PipelineTrigger struct {
-	Event PipelineEventTrigger `json:"event"`
+	Event    PipelineTriggerEvent    `json:"event"`
+	Pipeline PipelineTriggerPipeline `json:"pipeline"`
 }
 
 // PipelineSpec defines the desired state of Pipeline

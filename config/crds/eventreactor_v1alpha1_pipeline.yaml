@@ -40,8 +40,19 @@ spec:
                   - type
                   - source
                   type: object
+                pipeline:
+                  properties:
+                    selector:
+                      type: object
+                    status:
+                      type: string
+                  required:
+                  - selector
+                  - status
+                  type: object
               required:
               - event
+              - pipeline
               type: object
           required:
           - trigger
