@@ -53,7 +53,6 @@ type EventStatus struct {
 
 // Event is the Schema for the events API
 // +k8s:openapi-gen=true
-// +kubebuilder:subresource:status
 type Event struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
