@@ -18,7 +18,6 @@ package event
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -174,7 +173,7 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 }
 
 func (r *ReconcileEvent) newAction(ev *v1alpha1.Event, pipeline *v1alpha1.Pipeline) *v1alpha1.Action {
-	name := fmt.Sprintf("%s-%s", ev.Name, pipeline.Name)
+	name := v1alpha1.NewName()
 
 	envVars := []corev1.EnvVar{
 		corev1.EnvVar{
