@@ -118,8 +118,7 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 		return reconcile.Result{}, err
 	}
 
-	cond := instance.Status.GetCondition(buildv1alpha1.BuildSucceeded)
-	if cond != nil && cond.Status != corev1.ConditionUnknown {
+	if instance.IsCompleted() {
 		return reconcile.Result{}, nil
 	}
 
