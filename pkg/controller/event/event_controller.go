@@ -177,24 +177,20 @@ func (r *ReconcileEvent) newAction(ev *v1alpha1.Event, pipeline *v1alpha1.Pipeli
 
 	envVars := []corev1.EnvVar{
 		corev1.EnvVar{
-			Name:  "EVENTREACTOR_EVENT_NAME",
+			Name:  "ER_EVENT_NAME",
 			Value: ev.Name,
 		},
 		corev1.EnvVar{
-			Name:  "EVENTREACTOR_EVENT_TYPE",
+			Name:  "ER_EVENT_TYPE",
 			Value: ev.Spec.Type,
 		},
 		corev1.EnvVar{
-			Name:  "EVENTREACTOR_EVENT_SOURCE",
+			Name:  "ER_EVENT_SOURCE",
 			Value: ev.Spec.Source,
 		},
 		corev1.EnvVar{
-			Name:  "EVENTREACTOR_PIPELINE_NAME",
+			Name:  "ER_PIPELINE_NAME",
 			Value: pipeline.Name,
-		},
-		corev1.EnvVar{
-			Name:  "EVENTREACTOR_ACTION_NAME",
-			Value: name,
 		},
 	}
 
