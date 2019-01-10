@@ -11,8 +11,6 @@ spec:
     kind: Event
     plural: events
   scope: Namespaced
-  subresources:
-    status: {}
   validation:
     openAPIV3Schema:
       properties:
@@ -56,11 +54,9 @@ spec:
           type: object
         status:
           properties:
-            completionTime:
+            triggeredTime:
               format: date-time
               type: string
-            processed:
-              type: boolean
           type: object
   version: v1alpha1
 status:

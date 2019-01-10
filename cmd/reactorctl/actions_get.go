@@ -60,7 +60,7 @@ func actionsGetRun(cmd *cobra.Command, args []string) error {
 	a := &Action{
 		Name:     action.Name,
 		Date:     action.ObjectMeta.CreationTimestamp,
-		Event:    action.Spec.Event,
+		Event:    action.Spec.Event.Name,
 		Pipeline: action.Spec.Pipeline.Name,
 		Steps:    []ActionStep{},
 	}

@@ -47,7 +47,10 @@ func TestStorageAction(t *testing.T) {
 					},
 				},
 			},
-			Event: "7yjzp0t5g15329yr37n5q0qdh3",
+			Event: ActionSpecEvent{
+				Name: "7yjzp0t5g15329yr37n5q0qdh3",
+				Kind: "Event",
+			},
 			Pipeline: ActionSpecPipeline{
 				Name:       "foo",
 				Generation: 1,

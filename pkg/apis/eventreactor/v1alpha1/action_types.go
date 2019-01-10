@@ -22,24 +22,40 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	NotificationStatusSuccess = "success"
+	NotificationStatusFailure = "failure"
+)
+
+type ActionSpecEvent struct {
+	Name string `json:"name"`
+	Kind string `json:"kind"`
+}
+
 type ActionSpecPipeline struct {
 	Name       string `json:"name"`
 	Generation int64  `json:"generation"`
+}
+
+type ActionSpecNotification struct {
+	Name string `json:"name"`
 }
 
 // ActionSpec defines the desired state of Action
 type ActionSpec struct {
 	buildv1alpha1.BuildSpec
 
-	Event    string             `json:"event"`
-	Pipeline ActionSpecPipeline `json:"pipeline"`
+	Event        ActionSpecEvent        `json:"event"`
+	Pipeline     ActionSpecPipeline     `json:"pipeline"`
+	Notification ActionSpecNotification `json:"notification"`
 }
 
 // ActionStatus defines the observed state of Action
 type ActionStatus struct {
 	buildv1alpha1.BuildStatus
 
-	StepLogs []string `json:"stepLogs,omitempty"`
+	StepLogs         []string     `json:"stepLogs,omitempty"`
+	NotificationTime *metav1.Time `json:"notificationTime,omitempty"`
 }
 
 // +genclient
@@ -68,6 +84,24 @@ func (a Action) IsSucceeded() bool {
 func (a Action) IsFailed() bool {
 	cond := a.Status.GetCondition(buildv1alpha1.BuildSucceeded)
 	return (cond != nil && cond.Status == corev1.ConditionFalse)
+}
+
+func (a Action) NotificationStatus() string {
+	status := ""
+
+	cond := a.Status.BuildStatus.GetCondition(buildv1alpha1.BuildSucceeded)
+	if cond == nil {
+		return status
+	}
+
+	switch cond.Status {
+	case corev1.ConditionTrue:
+		status = NotificationStatusSuccess
+	case corev1.ConditionFalse:
+		status = NotificationStatusFailure
+	}
+
+	return status
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

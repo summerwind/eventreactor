@@ -23,7 +23,22 @@ spec:
         spec:
           properties:
             event:
-              type: string
+              properties:
+                kind:
+                  type: string
+                name:
+                  type: string
+              required:
+              - name
+              - kind
+              type: object
+            notification:
+              properties:
+                name:
+                  type: string
+              required:
+              - name
+              type: object
             pipeline:
               properties:
                 generation:
@@ -38,9 +53,13 @@ spec:
           required:
           - event
           - pipeline
+          - notification
           type: object
         status:
           properties:
+            notificationTime:
+              format: date-time
+              type: string
             stepLogs:
               items:
                 type: string

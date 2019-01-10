@@ -24,7 +24,9 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -105,6 +107,7 @@ type ReconcileAction struct {
 // +kubebuilder:rbac:groups=build.knative.dev,resources=builds,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups=,resources=pods/log,verbs=get;list
 func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	fmt.Println(request)
 	// Fetch the Action instance
 	instance := &v1alpha1.Action{}
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
@@ -118,8 +121,27 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 		return reconcile.Result{}, err
 	}
 
-	if instance.IsCompleted() {
+	if instance.Status.NotificationTime != nil {
 		return reconcile.Result{}, nil
+	}
+
+	// Start another pipelines
+	if instance.IsCompleted() {
+		err := r.startPipelines(instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		t := metav1.Now()
+
+		action := instance.DeepCopy()
+		action.Status.NotificationTime = &t
+
+		r.log.Info("Updating action", "namespace", action.Namespace, "name", action.Name)
+		err = r.Update(context.TODO(), action)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
 	build := r.newBuild(instance)
@@ -205,4 +227,153 @@ func (r *ReconcileAction) getStepLog(namespace, podName, containerName string) (
 	}
 
 	return string(b), nil
+}
+
+func (r *ReconcileAction) startPipelines(action *v1alpha1.Action) error {
+	opts := &client.ListOptions{Namespace: action.Namespace}
+
+	pipelineList := &v1alpha1.PipelineList{}
+	err := r.List(context.TODO(), opts, pipelineList)
+	if err != nil {
+		return err
+	}
+
+	for _, pipeline := range pipelineList.Items {
+		// Ignore if pipeline trigger is not set
+		if pipeline.Spec.Trigger.Pipeline == nil {
+			continue
+		}
+
+		// Ignore if notification status is not matched
+		status := pipeline.Spec.Trigger.Pipeline.Status
+		if status != "" && status != action.NotificationStatus() {
+			continue
+		}
+
+		ls := pipeline.Spec.Trigger.Pipeline.Selector
+		selector, err := metav1.LabelSelectorAsSelector(&ls)
+		if err != nil {
+			r.log.Error(err, "Invalid label selector")
+			return err
+		}
+
+		// Ignore if labels does not match the label selector
+		if !selector.Matches(labels.Set(action.ObjectMeta.Labels)) {
+			continue
+		}
+
+		na := r.newAction(action, &pipeline)
+		naKey := types.NamespacedName{
+			Name:      na.Name,
+			Namespace: na.Namespace,
+		}
+
+		err = r.Get(context.TODO(), naKey, na)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				r.log.Info("Creating next action", "namespace", na.Namespace, "name", na.Name)
+				err = r.Create(context.TODO(), na)
+				if err != nil {
+					return err
+				}
+			} else if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *ReconcileAction) newAction(action *v1alpha1.Action, pipeline *v1alpha1.Pipeline) *v1alpha1.Action {
+	eventName := action.Spec.Notification.Name
+	status := action.NotificationStatus()
+	via := action.ObjectMeta.Annotations[v1alpha1.KeyPipelineVia]
+	if via == "" {
+		via = action.Spec.Pipeline.Name
+	} else {
+		via = fmt.Sprintf("%s,%s", via, action.Spec.Pipeline.Name)
+	}
+
+	name := fmt.Sprintf("%s-%s", eventName, pipeline.Name)
+
+	envVars := []corev1.EnvVar{
+		corev1.EnvVar{
+			Name:  "ER_EVENT_NAME",
+			Value: eventName,
+		},
+		corev1.EnvVar{
+			Name:  "ER_EVENT_TYPE",
+			Value: "eventreator.pipeline.end",
+		},
+		corev1.EnvVar{
+			Name:  "ER_EVENT_SOURCE",
+			Value: action.ObjectMeta.SelfLink,
+		},
+		corev1.EnvVar{
+			Name:  "ER_PIPELINE_NAME",
+			Value: pipeline.Name,
+		},
+		corev1.EnvVar{
+			Name:  "ER_PIPELINE_UPSTREAM_NAME",
+			Value: action.Name,
+		},
+		corev1.EnvVar{
+			Name:  "ER_PIPELINE_UPSTREAM_STATUS",
+			Value: status,
+		},
+		corev1.EnvVar{
+			Name:  "ER_PIPELINE_VIA",
+			Value: via,
+		},
+	}
+
+	buildSpec := pipeline.Spec.BuildSpec.DeepCopy()
+
+	for i, _ := range buildSpec.Steps {
+		buildSpec.Steps[i].Env = append(buildSpec.Steps[i].Env, envVars...)
+	}
+	if buildSpec.Template != nil {
+		buildSpec.Template.Env = append(buildSpec.Template.Env, envVars...)
+	}
+
+	labels := map[string]string{
+		v1alpha1.KeyEventName:    eventName,
+		v1alpha1.KeyPipelineName: pipeline.Name,
+	}
+
+	for key, val := range pipeline.ObjectMeta.Labels {
+		labels[key] = val
+	}
+
+	annotations := map[string]string{
+		v1alpha1.KeyPipelineUpstreamName:   action.Name,
+		v1alpha1.KeyPipelineUpstreamStatus: status,
+		v1alpha1.KeyPipelineVia:            via,
+	}
+
+	newAction := &v1alpha1.Action{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Namespace:   pipeline.Namespace,
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Spec: v1alpha1.ActionSpec{
+			BuildSpec: *buildSpec,
+			Event: v1alpha1.ActionSpecEvent{
+				Name: eventName,
+				Kind: action.TypeMeta.Kind,
+			},
+			Pipeline: v1alpha1.ActionSpecPipeline{
+				Name:       pipeline.Name,
+				Generation: pipeline.Generation,
+			},
+			Notification: v1alpha1.ActionSpecNotification{
+				Name: v1alpha1.NewName(),
+			},
+		},
+	}
+
+	return newAction
 }

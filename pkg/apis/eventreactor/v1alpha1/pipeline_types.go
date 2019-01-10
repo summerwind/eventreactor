@@ -37,8 +37,8 @@ type PipelineTriggerPipeline struct {
 }
 
 type PipelineTrigger struct {
-	Event    PipelineTriggerEvent    `json:"event"`
-	Pipeline PipelineTriggerPipeline `json:"pipeline"`
+	Event    *PipelineTriggerEvent    `json:"event,omitempty"`
+	Pipeline *PipelineTriggerPipeline `json:"pipeline,omitempty"`
 }
 
 // PipelineSpec defines the desired state of Pipeline
