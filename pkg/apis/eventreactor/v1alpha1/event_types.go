@@ -44,8 +44,7 @@ type EventSpec struct {
 
 // EventStatus defines the observed state of Event
 type EventStatus struct {
-	Processed      bool         `json:"processed,omitempty"`
-	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
+	TriggeredTime *metav1.Time `json:"triggeredTime,omitempty"`
 }
 
 // +genclient

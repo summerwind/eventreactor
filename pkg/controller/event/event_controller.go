@@ -99,7 +99,7 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 		return reconcile.Result{}, err
 	}
 
-	if instance.Status.Processed {
+	if instance.Status.TriggeredTime != nil {
 		return reconcile.Result{}, nil
 	}
 
@@ -160,8 +160,7 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 
 	ct := metav1.Now()
 	event := instance.DeepCopy()
-	event.Status.Processed = true
-	event.Status.CompletionTime = &ct
+	event.Status.TriggeredTime = &ct
 
 	r.log.Info("Updating event", "namespace", event.Namespace, "name", event.Name)
 	err = r.Update(context.TODO(), event)
