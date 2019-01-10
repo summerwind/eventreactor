@@ -176,8 +176,6 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 func (r *ReconcileEvent) newAction(ev *v1alpha1.Event, pipeline *v1alpha1.Pipeline) *v1alpha1.Action {
 	name := fmt.Sprintf("%s-%s", ev.Name, pipeline.Name)
 
-	buildSpec := pipeline.Spec.BuildSpec.DeepCopy()
-
 	envVars := []corev1.EnvVar{
 		corev1.EnvVar{
 			Name:  "EVENTREACTOR_EVENT_NAME",
@@ -201,6 +199,8 @@ func (r *ReconcileEvent) newAction(ev *v1alpha1.Event, pipeline *v1alpha1.Pipeli
 		},
 	}
 
+	buildSpec := pipeline.Spec.BuildSpec.DeepCopy()
+
 	for i, _ := range buildSpec.Steps {
 		buildSpec.Steps[i].Env = append(buildSpec.Steps[i].Env, envVars...)
 	}
@@ -208,14 +208,20 @@ func (r *ReconcileEvent) newAction(ev *v1alpha1.Event, pipeline *v1alpha1.Pipeli
 		buildSpec.Template.Env = append(buildSpec.Template.Env, envVars...)
 	}
 
+	labels := map[string]string{
+		v1alpha1.KeyEventName:    ev.Name,
+		v1alpha1.KeyPipelineName: pipeline.Name,
+	}
+
+	for key, val := range pipeline.ObjectMeta.Labels {
+		labels[key] = val
+	}
+
 	action := &v1alpha1.Action{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: pipeline.Namespace,
-			Labels: map[string]string{
-				v1alpha1.KeyEventName:    ev.Name,
-				v1alpha1.KeyPipelineName: pipeline.Name,
-			},
+			Labels:    labels,
 		},
 		Spec: v1alpha1.ActionSpec{
 			BuildSpec: *buildSpec,
