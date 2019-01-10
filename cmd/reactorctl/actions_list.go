@@ -87,7 +87,10 @@ func actionsListRun(cmd *cobra.Command, args []string) error {
 		case corev1.ConditionFalse:
 			status = "Failed"
 		case corev1.ConditionUnknown:
-			status = "Running"
+			status = cond.Reason
+			if status == "Building" {
+				status = "Running"
+			}
 		}
 
 		fmt.Fprintf(writer, "%s\t%s\t%s\n", a.Name, status, a.ObjectMeta.CreationTimestamp)
