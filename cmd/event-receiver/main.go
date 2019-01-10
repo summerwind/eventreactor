@@ -46,19 +46,12 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	name, err := v1alpha1.NewEventName()
-	if err != nil {
-		logError(fmt.Sprintf("Failed to generate event name: %v", err))
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
 	eventType := r.Header.Get("CE-Type")
 
 	ev := &v1alpha1.Event{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
-			Name:      name,
+			Name:      v1alpha1.NewName(),
 			Labels: map[string]string{
 				v1alpha1.KeyEventType: eventType,
 			},
@@ -89,7 +82,7 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("remote_addr:%s name:%s event_type:%s", r.RemoteAddr, name, eventType)
+	log.Printf("remote_addr:%s name:%s type:%s", r.RemoteAddr, ev.Name, ev.Spec.Type)
 }
 
 func run(cmd *cobra.Command, args []string) error {

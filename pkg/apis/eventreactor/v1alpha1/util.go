@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"fmt"
 	"math/rand"
 	"strings"
 	"time"
@@ -17,14 +18,14 @@ func init() {
 	entropy = rand.New(rand.NewSource(t.UnixNano()))
 }
 
-// NewEventName returns a event name based on ULID.
-func NewEventName() (string, error) {
+// NewName returns a resource name based on ULID.
+func NewName() string {
 	t := ulid.MaxTime() - ulid.Now()
 
 	id, err := ulid.New(t, entropy)
 	if err != nil {
-		return "", err
+		panic(fmt.Sprintf("Unable to generate ULID: %s", err))
 	}
 
-	return strings.ToLower(id.String()), nil
+	return strings.ToLower(id.String())
 }
