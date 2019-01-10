@@ -33,7 +33,7 @@ type PipelineTriggerEvent struct {
 
 type PipelineTriggerPipeline struct {
 	Selector metav1.LabelSelector `json:"selector"`
-	Status   string               `json:"status"`
+	Status   string               `json:"status,omitempty"`
 }
 
 type PipelineTrigger struct {

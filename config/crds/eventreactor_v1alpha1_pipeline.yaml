@@ -48,7 +48,6 @@ spec:
                       type: string
                   required:
                   - selector
-                  - status
                   type: object
               type: object
           required:
