@@ -92,21 +92,23 @@ func (r *ReconcilePipeline) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
-	eventType := instance.Spec.Trigger.Event.Type
+	if instance.Spec.Trigger.Event != nil {
+		eventType := instance.Spec.Trigger.Event.Type
 
-	val, ok := instance.ObjectMeta.Labels[v1alpha1.KeyEventType]
-	if !ok || eventType != val {
-		pipeline := instance.DeepCopy()
+		val, ok := instance.ObjectMeta.Labels[v1alpha1.KeyEventType]
+		if !ok || eventType != val {
+			pipeline := instance.DeepCopy()
 
-		if pipeline.ObjectMeta.Labels == nil {
-			pipeline.ObjectMeta.Labels = map[string]string{}
-		}
-		pipeline.ObjectMeta.Labels[v1alpha1.KeyEventType] = eventType
+			if pipeline.ObjectMeta.Labels == nil {
+				pipeline.ObjectMeta.Labels = map[string]string{}
+			}
+			pipeline.ObjectMeta.Labels[v1alpha1.KeyEventType] = eventType
 
-		r.log.Info("Updating pipeline", "namespace", pipeline.Namespace, "name", pipeline.Name)
-		err = r.Update(context.TODO(), pipeline)
-		if err != nil {
-			return reconcile.Result{}, err
+			r.log.Info("Updating pipeline", "namespace", pipeline.Namespace, "name", pipeline.Name)
+			err = r.Update(context.TODO(), pipeline)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
 		}
 	}
 
