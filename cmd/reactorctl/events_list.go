@@ -43,7 +43,7 @@ func eventsListRun(cmd *cobra.Command, args []string) error {
 	}
 
 	if eventType != "" {
-		selector[v1alpha1.LabelEventType] = eventType
+		selector[v1alpha1.KeyEventType] = eventType
 	}
 
 	opts := client.MatchingLabels(selector)

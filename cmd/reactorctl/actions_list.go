@@ -50,10 +50,10 @@ func actionsListRun(cmd *cobra.Command, args []string) error {
 	}
 
 	if pipelineName != "" {
-		selector[v1alpha1.LabelPipelineName] = pipelineName
+		selector[v1alpha1.KeyPipelineName] = pipelineName
 	}
 	if eventName != "" {
-		selector[v1alpha1.LabelEventName] = eventName
+		selector[v1alpha1.KeyEventName] = eventName
 	}
 
 	opts := client.MatchingLabels(selector)

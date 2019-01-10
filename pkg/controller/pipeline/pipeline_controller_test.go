@@ -93,5 +93,5 @@ func TestReconcile(t *testing.T) {
 	g.Expect(c.Get(context.TODO(), expected.NamespacedName, pipeline)).To(gomega.Succeed())
 
 	eventType := instance.Spec.Trigger.Event.Type
-	g.Expect(pipeline.ObjectMeta.Labels[v1alpha1.LabelEventType]).To(gomega.Equal(eventType))
+	g.Expect(pipeline.ObjectMeta.Labels[v1alpha1.KeyEventType]).To(gomega.Equal(eventType))
 }

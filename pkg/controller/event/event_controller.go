@@ -107,7 +107,7 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 	pipelineList := &v1alpha1.PipelineList{}
 
 	labels := map[string]string{}
-	labels[v1alpha1.LabelEventType] = instance.Spec.Type
+	labels[v1alpha1.KeyEventType] = instance.Spec.Type
 
 	opts := &client.ListOptions{Namespace: instance.Namespace}
 	opts = opts.MatchingLabels(labels)
@@ -213,8 +213,8 @@ func (r *ReconcileEvent) newAction(ev *v1alpha1.Event, pipeline *v1alpha1.Pipeli
 			Name:      name,
 			Namespace: pipeline.Namespace,
 			Labels: map[string]string{
-				v1alpha1.LabelEventName:    ev.Name,
-				v1alpha1.LabelPipelineName: pipeline.Name,
+				v1alpha1.KeyEventName:    ev.Name,
+				v1alpha1.KeyPipelineName: pipeline.Name,
 			},
 		},
 		Spec: v1alpha1.ActionSpec{

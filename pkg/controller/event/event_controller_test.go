@@ -56,7 +56,7 @@ func TestReconcile(t *testing.T) {
 			Name:      "pipeline",
 			Namespace: "default",
 			Labels: map[string]string{
-				v1alpha1.LabelEventType: "io.github.summerwind.eventreactor.test",
+				v1alpha1.KeyEventType: "io.github.summerwind.eventreactor.test",
 			},
 		},
 		Spec: v1alpha1.PipelineSpec{

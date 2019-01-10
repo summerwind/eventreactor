@@ -60,7 +60,7 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 			Namespace: namespace,
 			Name:      name,
 			Labels: map[string]string{
-				v1alpha1.LabelEventType: eventType,
+				v1alpha1.KeyEventType: eventType,
 			},
 		},
 		Spec: v1alpha1.EventSpec{
