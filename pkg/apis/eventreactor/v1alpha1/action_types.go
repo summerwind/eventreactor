@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	buildv1alpha1 "github.com/knative/build/pkg/apis/build/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -52,6 +53,21 @@ type Action struct {
 
 	Spec   ActionSpec   `json:"spec,omitempty"`
 	Status ActionStatus `json:"status,omitempty"`
+}
+
+func (a Action) IsCompleted() bool {
+	cond := a.Status.GetCondition(buildv1alpha1.BuildSucceeded)
+	return (cond != nil && cond.Status != corev1.ConditionUnknown)
+}
+
+func (a Action) IsSucceeded() bool {
+	cond := a.Status.GetCondition(buildv1alpha1.BuildSucceeded)
+	return (cond != nil && cond.Status == corev1.ConditionTrue)
+}
+
+func (a Action) IsFailed() bool {
+	cond := a.Status.GetCondition(buildv1alpha1.BuildSucceeded)
+	return (cond != nil && cond.Status == corev1.ConditionFalse)
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
