@@ -24,13 +24,10 @@ spec:
           properties:
             event:
               properties:
-                kind:
-                  type: string
                 name:
                   type: string
               required:
               - name
-              - kind
               type: object
             notification:
               properties:

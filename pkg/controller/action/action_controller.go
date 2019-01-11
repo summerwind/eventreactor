@@ -359,7 +359,6 @@ func (r *ReconcileAction) newAction(action *v1alpha1.Action, pipeline *v1alpha1.
 			BuildSpec: *buildSpec,
 			Event: v1alpha1.ActionSpecEvent{
 				Name: eventName,
-				Kind: action.TypeMeta.Kind,
 			},
 			Pipeline: v1alpha1.ActionSpecPipeline{
 				Name:       pipeline.Name,
