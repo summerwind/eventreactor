@@ -291,7 +291,7 @@ func (r *ReconcileAction) startPipelines(action *v1alpha1.Action) error {
 func (r *ReconcileAction) newAction(action *v1alpha1.Action, pipeline *v1alpha1.Pipeline) *v1alpha1.Action {
 	eventName := action.Spec.Notification.Name
 	status := action.NotificationStatus()
-	via := action.ObjectMeta.Annotations[v1alpha1.KeyPipelineVia]
+	via := action.Spec.Upstream.Via
 	if via == "" {
 		via = action.Spec.Pipeline.Name
 	} else {
@@ -349,18 +349,11 @@ func (r *ReconcileAction) newAction(action *v1alpha1.Action, pipeline *v1alpha1.
 		labels[key] = val
 	}
 
-	annotations := map[string]string{
-		v1alpha1.KeyPipelineUpstreamName:   action.Name,
-		v1alpha1.KeyPipelineUpstreamStatus: status,
-		v1alpha1.KeyPipelineVia:            via,
-	}
-
 	newAction := &v1alpha1.Action{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   pipeline.Namespace,
-			Labels:      labels,
-			Annotations: annotations,
+			Name:      name,
+			Namespace: pipeline.Namespace,
+			Labels:    labels,
 		},
 		Spec: v1alpha1.ActionSpec{
 			BuildSpec: *buildSpec,
@@ -371,6 +364,11 @@ func (r *ReconcileAction) newAction(action *v1alpha1.Action, pipeline *v1alpha1.
 			Pipeline: v1alpha1.ActionSpecPipeline{
 				Name:       pipeline.Name,
 				Generation: pipeline.Generation,
+			},
+			Upstream: v1alpha1.ActionSpecUpstream{
+				Name:   action.Name,
+				Status: status,
+				Via:    via,
 			},
 			Notification: v1alpha1.ActionSpecNotification{
 				Name: v1alpha1.NewName(),

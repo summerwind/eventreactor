@@ -50,9 +50,23 @@ spec:
               - name
               - generation
               type: object
+            upstream:
+              properties:
+                name:
+                  type: string
+                status:
+                  type: string
+                via:
+                  type: string
+              required:
+              - name
+              - status
+              - via
+              type: object
           required:
           - event
           - pipeline
+          - upstream
           - notification
           type: object
         status:

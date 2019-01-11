@@ -37,6 +37,12 @@ type ActionSpecPipeline struct {
 	Generation int64  `json:"generation"`
 }
 
+type ActionSpecUpstream struct {
+	Name   string `json:"name"`
+	Status string `json:"status"`
+	Via    string `json:"via"`
+}
+
 type ActionSpecNotification struct {
 	Name string `json:"name"`
 }
@@ -47,6 +53,7 @@ type ActionSpec struct {
 
 	Event        ActionSpecEvent        `json:"event"`
 	Pipeline     ActionSpecPipeline     `json:"pipeline"`
+	Upstream     ActionSpecUpstream     `json:"upstream"`
 	Notification ActionSpecNotification `json:"notification"`
 }
 
