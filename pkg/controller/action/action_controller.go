@@ -107,7 +107,6 @@ type ReconcileAction struct {
 // +kubebuilder:rbac:groups=build.knative.dev,resources=builds,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups=,resources=pods/log,verbs=get;list
 func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	fmt.Println(request)
 	// Fetch the Action instance
 	instance := &v1alpha1.Action{}
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
@@ -239,6 +238,11 @@ func (r *ReconcileAction) startPipelines(action *v1alpha1.Action) error {
 	}
 
 	for _, pipeline := range pipelineList.Items {
+		// Ignore pipeline of current action to avoid looping
+		if pipeline.Name == action.Spec.Pipeline.Name {
+			continue
+		}
+
 		// Ignore if pipeline trigger is not set
 		if pipeline.Spec.Trigger.Pipeline == nil {
 			continue
@@ -253,7 +257,6 @@ func (r *ReconcileAction) startPipelines(action *v1alpha1.Action) error {
 		ls := pipeline.Spec.Trigger.Pipeline.Selector
 		selector, err := metav1.LabelSelectorAsSelector(&ls)
 		if err != nil {
-			r.log.Error(err, "Invalid label selector")
 			return err
 		}
 
