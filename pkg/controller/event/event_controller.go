@@ -221,7 +221,9 @@ func (r *ReconcileEvent) newAction(ev *v1alpha1.Event, pipeline *v1alpha1.Pipeli
 		Spec: v1alpha1.ActionSpec{
 			BuildSpec: *buildSpec,
 			Event: v1alpha1.ActionSpecEvent{
-				Name: ev.Name,
+				Name:   ev.Name,
+				Type:   ev.Spec.Type,
+				Source: ev.Spec.Source,
 			},
 			Pipeline: v1alpha1.ActionSpecPipeline{
 				Name:       pipeline.Name,

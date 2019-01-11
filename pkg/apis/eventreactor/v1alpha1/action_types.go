@@ -28,7 +28,9 @@ const (
 )
 
 type ActionSpecEvent struct {
-	Name string `json:"name"`
+	Name   string `json:"name"`
+	Type   string `json:"type"`
+	Source string `json:"source"`
 }
 
 type ActionSpecPipeline struct {

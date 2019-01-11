@@ -289,7 +289,8 @@ func (r *ReconcileAction) startPipelines(action *v1alpha1.Action) error {
 }
 
 func (r *ReconcileAction) newAction(action *v1alpha1.Action, pipeline *v1alpha1.Pipeline) *v1alpha1.Action {
-	eventName := action.Spec.Notification.Name
+	name := fmt.Sprintf("%s-%s", action.Spec.Notification.Name, pipeline.Name)
+
 	status := action.NotificationStatus()
 	via := action.Spec.Upstream.Via
 	if via == "" {
@@ -298,35 +299,33 @@ func (r *ReconcileAction) newAction(action *v1alpha1.Action, pipeline *v1alpha1.
 		via = fmt.Sprintf("%s,%s", via, action.Spec.Pipeline.Name)
 	}
 
-	name := fmt.Sprintf("%s-%s", eventName, pipeline.Name)
-
 	envVars := []corev1.EnvVar{
 		corev1.EnvVar{
 			Name:  "ER_EVENT_NAME",
-			Value: eventName,
+			Value: action.Spec.Event.Name,
 		},
 		corev1.EnvVar{
 			Name:  "ER_EVENT_TYPE",
-			Value: "eventreator.pipeline.end",
+			Value: action.Spec.Event.Type,
 		},
 		corev1.EnvVar{
 			Name:  "ER_EVENT_SOURCE",
-			Value: action.ObjectMeta.SelfLink,
+			Value: action.Spec.Event.Source,
 		},
 		corev1.EnvVar{
 			Name:  "ER_PIPELINE_NAME",
 			Value: pipeline.Name,
 		},
 		corev1.EnvVar{
-			Name:  "ER_PIPELINE_UPSTREAM_NAME",
+			Name:  "ER_UPSTREAM_NAME",
 			Value: action.Name,
 		},
 		corev1.EnvVar{
-			Name:  "ER_PIPELINE_UPSTREAM_STATUS",
+			Name:  "ER_UPSTREAM_STATUS",
 			Value: status,
 		},
 		corev1.EnvVar{
-			Name:  "ER_PIPELINE_VIA",
+			Name:  "ER_UPSTREAM_VIA",
 			Value: via,
 		},
 	}
@@ -341,7 +340,7 @@ func (r *ReconcileAction) newAction(action *v1alpha1.Action, pipeline *v1alpha1.
 	}
 
 	labels := map[string]string{
-		v1alpha1.KeyEventName:    eventName,
+		v1alpha1.KeyEventName:    action.Spec.Event.Name,
 		v1alpha1.KeyPipelineName: pipeline.Name,
 	}
 
@@ -358,7 +357,9 @@ func (r *ReconcileAction) newAction(action *v1alpha1.Action, pipeline *v1alpha1.
 		Spec: v1alpha1.ActionSpec{
 			BuildSpec: *buildSpec,
 			Event: v1alpha1.ActionSpecEvent{
-				Name: eventName,
+				Name:   action.Spec.Event.Name,
+				Type:   action.Spec.Event.Type,
+				Source: action.Spec.Event.Source,
 			},
 			Pipeline: v1alpha1.ActionSpecPipeline{
 				Name:       pipeline.Name,
