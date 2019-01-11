@@ -81,14 +81,14 @@ func actionsListRun(cmd *cobra.Command, args []string) error {
 
 		cond := a.Status.GetCondition(buildv1alpha1.BuildSucceeded)
 		status := "Pending"
-		switch cond.Status {
-		case corev1.ConditionTrue:
-			status = "Succeeded"
-		case corev1.ConditionFalse:
-			status = "Failed"
-		case corev1.ConditionUnknown:
-			status = cond.Reason
-			if status == "Building" {
+
+		if cond != nil {
+			switch cond.Status {
+			case corev1.ConditionTrue:
+				status = "Succeeded"
+			case corev1.ConditionFalse:
+				status = "Failed"
+			case corev1.ConditionUnknown:
 				status = "Running"
 			}
 		}
