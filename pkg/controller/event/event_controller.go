@@ -35,7 +35,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -175,34 +174,6 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 func (r *ReconcileEvent) newAction(ev *v1alpha1.Event, pipeline *v1alpha1.Pipeline) *v1alpha1.Action {
 	name := fmt.Sprintf("%s-%s", ev.Name, pipeline.Name)
 
-	envVars := []corev1.EnvVar{
-		corev1.EnvVar{
-			Name:  "ER_EVENT_NAME",
-			Value: ev.Name,
-		},
-		corev1.EnvVar{
-			Name:  "ER_EVENT_TYPE",
-			Value: ev.Spec.Type,
-		},
-		corev1.EnvVar{
-			Name:  "ER_EVENT_SOURCE",
-			Value: ev.Spec.Source,
-		},
-		corev1.EnvVar{
-			Name:  "ER_PIPELINE_NAME",
-			Value: pipeline.Name,
-		},
-	}
-
-	buildSpec := pipeline.Spec.BuildSpec.DeepCopy()
-
-	for i, _ := range buildSpec.Steps {
-		buildSpec.Steps[i].Env = append(buildSpec.Steps[i].Env, envVars...)
-	}
-	if buildSpec.Template != nil {
-		buildSpec.Template.Env = append(buildSpec.Template.Env, envVars...)
-	}
-
 	labels := map[string]string{
 		v1alpha1.KeyEventName:    ev.Name,
 		v1alpha1.KeyPipelineName: pipeline.Name,
@@ -211,6 +182,8 @@ func (r *ReconcileEvent) newAction(ev *v1alpha1.Event, pipeline *v1alpha1.Pipeli
 	for key, val := range pipeline.ObjectMeta.Labels {
 		labels[key] = val
 	}
+
+	buildSpec := pipeline.Spec.BuildSpec.DeepCopy()
 
 	action := &v1alpha1.Action{
 		ObjectMeta: metav1.ObjectMeta{

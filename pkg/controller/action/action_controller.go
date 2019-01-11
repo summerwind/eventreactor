@@ -199,6 +199,50 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 func (r *ReconcileAction) newBuild(action *v1alpha1.Action) *buildv1alpha1.Build {
 	buildSpec := action.Spec.BuildSpec.DeepCopy()
 
+	envVars := []corev1.EnvVar{
+		corev1.EnvVar{
+			Name:  "ER_EVENT_NAME",
+			Value: action.Spec.Event.Name,
+		},
+		corev1.EnvVar{
+			Name:  "ER_EVENT_TYPE",
+			Value: action.Spec.Event.Type,
+		},
+		corev1.EnvVar{
+			Name:  "ER_EVENT_SOURCE",
+			Value: action.Spec.Event.Source,
+		},
+		corev1.EnvVar{
+			Name:  "ER_PIPELINE_NAME",
+			Value: action.Spec.Pipeline.Name,
+		},
+	}
+
+	if action.Spec.Upstream.Name != "" {
+		upstreamEnvVars := []corev1.EnvVar{
+			corev1.EnvVar{
+				Name:  "ER_UPSTREAM_NAME",
+				Value: action.Spec.Upstream.Name,
+			},
+			corev1.EnvVar{
+				Name:  "ER_UPSTREAM_STATUS",
+				Value: action.Spec.Upstream.Status,
+			},
+			corev1.EnvVar{
+				Name:  "ER_UPSTREAM_VIA",
+				Value: action.Spec.Upstream.Via,
+			},
+		}
+		envVars = append(envVars, upstreamEnvVars...)
+	}
+
+	for i, _ := range buildSpec.Steps {
+		buildSpec.Steps[i].Env = append(buildSpec.Steps[i].Env, envVars...)
+	}
+	if buildSpec.Template != nil {
+		buildSpec.Template.Env = append(buildSpec.Template.Env, envVars...)
+	}
+
 	build := &buildv1alpha1.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      action.ObjectMeta.Name,
@@ -291,54 +335,6 @@ func (r *ReconcileAction) startPipelines(action *v1alpha1.Action) error {
 func (r *ReconcileAction) newAction(action *v1alpha1.Action, pipeline *v1alpha1.Pipeline) *v1alpha1.Action {
 	name := fmt.Sprintf("%s-%s", action.Spec.Notification.Name, pipeline.Name)
 
-	status := action.NotificationStatus()
-	via := action.Spec.Upstream.Via
-	if via == "" {
-		via = action.Spec.Pipeline.Name
-	} else {
-		via = fmt.Sprintf("%s,%s", via, action.Spec.Pipeline.Name)
-	}
-
-	envVars := []corev1.EnvVar{
-		corev1.EnvVar{
-			Name:  "ER_EVENT_NAME",
-			Value: action.Spec.Event.Name,
-		},
-		corev1.EnvVar{
-			Name:  "ER_EVENT_TYPE",
-			Value: action.Spec.Event.Type,
-		},
-		corev1.EnvVar{
-			Name:  "ER_EVENT_SOURCE",
-			Value: action.Spec.Event.Source,
-		},
-		corev1.EnvVar{
-			Name:  "ER_PIPELINE_NAME",
-			Value: pipeline.Name,
-		},
-		corev1.EnvVar{
-			Name:  "ER_UPSTREAM_NAME",
-			Value: action.Name,
-		},
-		corev1.EnvVar{
-			Name:  "ER_UPSTREAM_STATUS",
-			Value: status,
-		},
-		corev1.EnvVar{
-			Name:  "ER_UPSTREAM_VIA",
-			Value: via,
-		},
-	}
-
-	buildSpec := pipeline.Spec.BuildSpec.DeepCopy()
-
-	for i, _ := range buildSpec.Steps {
-		buildSpec.Steps[i].Env = append(buildSpec.Steps[i].Env, envVars...)
-	}
-	if buildSpec.Template != nil {
-		buildSpec.Template.Env = append(buildSpec.Template.Env, envVars...)
-	}
-
 	labels := map[string]string{
 		v1alpha1.KeyEventName:    action.Spec.Event.Name,
 		v1alpha1.KeyPipelineName: pipeline.Name,
@@ -347,6 +343,15 @@ func (r *ReconcileAction) newAction(action *v1alpha1.Action, pipeline *v1alpha1.
 	for key, val := range pipeline.ObjectMeta.Labels {
 		labels[key] = val
 	}
+
+	via := action.Spec.Upstream.Via
+	if via == "" {
+		via = action.Spec.Pipeline.Name
+	} else {
+		via = fmt.Sprintf("%s,%s", via, action.Spec.Pipeline.Name)
+	}
+
+	buildSpec := pipeline.Spec.BuildSpec.DeepCopy()
 
 	newAction := &v1alpha1.Action{
 		ObjectMeta: metav1.ObjectMeta{
@@ -367,7 +372,7 @@ func (r *ReconcileAction) newAction(action *v1alpha1.Action, pipeline *v1alpha1.
 			},
 			Upstream: v1alpha1.ActionSpecUpstream{
 				Name:   action.Name,
-				Status: status,
+				Status: action.NotificationStatus(),
 				Via:    via,
 			},
 			Notification: v1alpha1.ActionSpecNotification{
