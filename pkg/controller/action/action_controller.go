@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"reflect"
+	"strings"
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -43,6 +44,10 @@ import (
 	"github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	UpstreamLimit = 10
 )
 
 // Add creates a new Action Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
@@ -126,9 +131,14 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 
 	// Start another pipelines
 	if instance.IsCompleted() {
-		err := r.startPipelines(instance)
-		if err != nil {
-			return reconcile.Result{}, err
+		via := strings.Split(",", instance.Spec.Upstream.Via)
+		if len(via) < UpstreamLimit {
+			err := r.startPipelines(instance)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		} else {
+			r.log.Info("Next pipelines was not started due to the upstream limit", "namespace", instance.Namespace, "name", instance.Name)
 		}
 
 		t := metav1.Now()
