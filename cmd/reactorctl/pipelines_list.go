@@ -58,7 +58,14 @@ func pipelinesListRun(cmd *cobra.Command, args []string) error {
 	fmt.Fprintln(writer, "NAME\tTRIGGER")
 
 	for _, p := range pipelineList.Items {
-		fmt.Fprintf(writer, "%s\tevent:%s\n", p.Name, p.Spec.Trigger.Event.Type)
+		trigger := ""
+		if p.Spec.Trigger.Pipeline != nil {
+			trigger = "pipeline"
+		} else {
+			trigger = fmt.Sprintf("event:%s", p.Spec.Trigger.Event.Type)
+		}
+
+		fmt.Fprintf(writer, "%s\t%s\n", p.Name, trigger)
 	}
 	writer.Flush()
 
