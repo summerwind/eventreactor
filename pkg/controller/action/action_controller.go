@@ -239,6 +239,10 @@ func (r *ReconcileAction) newBuild(action *v1alpha1.Action) *buildv1alpha1.Build
 				Value: action.Spec.Upstream.Status,
 			},
 			corev1.EnvVar{
+				Name:  "ER_UPSTREAM_PIPELINE",
+				Value: action.Spec.Upstream.Pipeline,
+			},
+			corev1.EnvVar{
 				Name:  "ER_UPSTREAM_VIA",
 				Value: action.Spec.Upstream.Via,
 			},
@@ -381,9 +385,10 @@ func (r *ReconcileAction) newAction(action *v1alpha1.Action, pipeline *v1alpha1.
 				Generation: pipeline.Generation,
 			},
 			Upstream: v1alpha1.ActionSpecUpstream{
-				Name:   action.Name,
-				Status: action.NotificationStatus(),
-				Via:    via,
+				Name:     action.Name,
+				Status:   action.NotificationStatus(),
+				Pipeline: action.Spec.Pipeline.Name,
+				Via:      via,
 			},
 			Notification: v1alpha1.ActionSpecNotification{
 				Name: v1alpha1.NewName(),

@@ -39,9 +39,10 @@ type ActionSpecPipeline struct {
 }
 
 type ActionSpecUpstream struct {
-	Name   string `json:"name"`
-	Status string `json:"status"`
-	Via    string `json:"via"`
+	Name     string `json:"name"`
+	Status   string `json:"status"`
+	Pipeline string `json:"pipeline"`
+	Via      string `json:"via"`
 }
 
 type ActionSpecNotification struct {
