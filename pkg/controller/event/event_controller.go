@@ -26,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -133,12 +132,6 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 		}
 
 		action := r.newAction(instance, &pipeline)
-		err = controllerutil.SetControllerReference(&pipeline, action, r.scheme)
-		if err != nil {
-			r.log.Error(err, "Unable to set controller reference")
-			return reconcile.Result{}, err
-		}
-
 		actionKey := types.NamespacedName{
 			Name:      action.Name,
 			Namespace: action.Namespace,
