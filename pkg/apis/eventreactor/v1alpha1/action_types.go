@@ -63,8 +63,8 @@ type ActionSpec struct {
 type ActionStatus struct {
 	buildv1alpha1.BuildStatus
 
-	StepLogs         []string     `json:"stepLogs,omitempty"`
-	NotificationTime *metav1.Time `json:"notificationTime,omitempty"`
+	StepLogs     []string     `json:"stepLogs,omitempty"`
+	DispatchTime *metav1.Time `json:"dispatchTime,omitempty"`
 }
 
 // +genclient

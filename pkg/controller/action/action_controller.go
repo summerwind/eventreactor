@@ -125,7 +125,7 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 		return reconcile.Result{}, err
 	}
 
-	if instance.Status.NotificationTime != nil {
+	if instance.Status.DispatchTime != nil {
 		return reconcile.Result{}, nil
 	}
 
@@ -144,7 +144,7 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 		t := metav1.Now()
 
 		action := instance.DeepCopy()
-		action.Status.NotificationTime = &t
+		action.Status.DispatchTime = &t
 
 		r.log.Info("Updating action", "namespace", action.Namespace, "name", action.Name)
 		err = r.Update(context.TODO(), action)

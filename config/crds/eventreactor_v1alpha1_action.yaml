@@ -77,7 +77,7 @@ spec:
           type: object
         status:
           properties:
-            notificationTime:
+            dispatchTime:
               format: date-time
               type: string
             stepLogs:

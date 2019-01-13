@@ -44,7 +44,7 @@ type EventSpec struct {
 
 // EventStatus defines the observed state of Event
 type EventStatus struct {
-	NotificationTime *metav1.Time `json:"notificationTime,omitempty"`
+	DispatchTime *metav1.Time `json:"dispatchTime,omitempty"`
 }
 
 // +genclient
