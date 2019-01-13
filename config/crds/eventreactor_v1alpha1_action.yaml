@@ -62,12 +62,13 @@ spec:
                 status:
                   type: string
                 via:
-                  type: string
+                  items:
+                    type: string
+                  type: array
               required:
               - name
               - status
               - pipeline
-              - via
               type: object
           required:
           - event

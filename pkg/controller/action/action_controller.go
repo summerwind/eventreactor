@@ -131,8 +131,7 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 
 	// Start another pipelines
 	if instance.IsCompleted() {
-		via := strings.Split(",", instance.Spec.Upstream.Via)
-		if len(via) < UpstreamLimit {
+		if len(instance.Spec.Upstream.Via) < UpstreamLimit {
 			err := r.startPipelines(instance)
 			if err != nil {
 				return reconcile.Result{}, err
@@ -244,7 +243,7 @@ func (r *ReconcileAction) newBuild(action *v1alpha1.Action) *buildv1alpha1.Build
 			},
 			corev1.EnvVar{
 				Name:  "ER_UPSTREAM_VIA",
-				Value: action.Spec.Upstream.Via,
+				Value: strings.Join(action.Spec.Upstream.Via, ","),
 			},
 		}
 		envVars = append(envVars, upstreamEnvVars...)
@@ -359,11 +358,10 @@ func (r *ReconcileAction) newAction(action *v1alpha1.Action, pipeline *v1alpha1.
 	}
 
 	via := action.Spec.Upstream.Via
-	if via == "" {
-		via = action.Spec.Pipeline.Name
-	} else {
-		via = fmt.Sprintf("%s,%s", via, action.Spec.Pipeline.Name)
+	if via == nil {
+		via = []string{}
 	}
+	via = append(via, action.Spec.Pipeline.Name)
 
 	buildSpec := pipeline.Spec.BuildSpec.DeepCopy()
 
