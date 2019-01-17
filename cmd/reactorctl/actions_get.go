@@ -65,8 +65,16 @@ func actionsGetRun(cmd *cobra.Command, args []string) error {
 		Steps:    []ActionStep{},
 	}
 
+	sources := len(action.Spec.BuildSpec.Sources)
+	if action.Spec.BuildSpec.Source != nil {
+		sources += 1
+	}
+	if sources > 0 {
+		sources += 1
+	}
+
 	for i, s := range action.Status.BuildStatus.StepsCompleted {
-		if i == 0 {
+		if i < sources {
 			continue
 		}
 
