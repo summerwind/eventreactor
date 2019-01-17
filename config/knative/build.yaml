@@ -24,6 +24,8 @@ spec:
     kind: Build
     plural: builds
   scope: Namespaced
+  subresources:
+    status: {}
   version: v1alpha1
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
@@ -43,6 +45,8 @@ spec:
     kind: BuildTemplate
     plural: buildtemplates
   scope: Namespaced
+  subresources:
+    status: {}
   version: v1alpha1
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
@@ -62,6 +66,8 @@ spec:
     kind: ClusterBuildTemplate
     plural: clusterbuildtemplates
   scope: Cluster
+  subresources:
+    status: {}
   version: v1alpha1
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
@@ -81,4 +87,6 @@ spec:
     - img
     singular: image
   scope: Namespaced
+  subresources:
+    status: {}
   version: v1alpha1

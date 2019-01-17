@@ -227,7 +227,7 @@
   version = "v1.1.5"
 
 [[projects]]
-  digest = "1:4b0c8d491aab9d199ee8470b038e3c3a0869759dd909901e976cb7f4945fd044"
+  digest = "1:4456b6fb170b0554f39e518bf0dc809fcfd3fb8d628df21c21d762154bcf3dbe"
   name = "github.com/knative/build"
   packages = [
     "pkg/apis/build",
@@ -235,8 +235,8 @@
     "pkg/client/clientset/versioned/scheme",
   ]
   pruneopts = "T"
-  revision = "94859753e2c6724df2be86f6a254f810895fa3eb"
-  version = "v0.2.0"
+  revision = "695fd25502db3d040ae4c690d7c53a7b842500d3"
+  version = "v0.3.0"
 
 [[projects]]
   branch = "master"
@@ -914,6 +914,7 @@
     "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
     "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
+    "k8s.io/apimachinery/pkg/labels",
     "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/runtime/schema",
     "k8s.io/apimachinery/pkg/types",
