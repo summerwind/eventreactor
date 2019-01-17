@@ -54,7 +54,7 @@ func pipelinesListRun(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	writer := tabwriter.NewWriter(os.Stdout, 0, 8, 1, '\t', 0)
+	writer := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 	fmt.Fprintln(writer, "NAME\tTRIGGER")
 
 	for _, p := range pipelineList.Items {

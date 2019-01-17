@@ -61,14 +61,15 @@ func eventsListRun(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	writer := tabwriter.NewWriter(os.Stdout, 0, 8, 1, '\t', 0)
+	writer := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 	fmt.Fprintln(writer, "NAME\tTYPE\tDATE")
 
 	for i, ev := range eventList.Items {
 		if i >= limit {
 			break
 		}
-		fmt.Fprintf(writer, "%s\t%s\t%s\n", ev.Name, ev.Spec.Type, ev.Spec.Time)
+		date := ev.Spec.Time.Format("2006-01-02 15:04:05")
+		fmt.Fprintf(writer, "%s\t%s\t%s\n", ev.Name, ev.Spec.Type, date)
 	}
 	writer.Flush()
 
