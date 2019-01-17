@@ -307,7 +307,7 @@ func (r *ReconcileAction) startPipelines(action *v1alpha1.Action) error {
 
 		// Ignore if notification status is not matched
 		status := pipeline.Spec.Trigger.Pipeline.Status
-		if status != "" && status != action.NotificationStatus() {
+		if status != "" && status != action.CompletionStatus() {
 			continue
 		}
 
@@ -346,11 +346,12 @@ func (r *ReconcileAction) startPipelines(action *v1alpha1.Action) error {
 }
 
 func (r *ReconcileAction) newAction(action *v1alpha1.Action, pipeline *v1alpha1.Pipeline) *v1alpha1.Action {
-	name := fmt.Sprintf("%s-%s", action.Spec.Notification.Name, pipeline.Name)
+	name := fmt.Sprintf("%s-%s", action.Spec.Transaction.ID, v1alpha1.NewName())
 
 	labels := map[string]string{
-		v1alpha1.KeyEventName:    action.Spec.Event.Name,
-		v1alpha1.KeyPipelineName: pipeline.Name,
+		v1alpha1.KeyEventName:     action.Spec.Event.Name,
+		v1alpha1.KeyPipelineName:  pipeline.Name,
+		v1alpha1.KeyTransactionID: action.Spec.Transaction.ID,
 	}
 
 	for key, val := range pipeline.ObjectMeta.Labels {
@@ -382,14 +383,15 @@ func (r *ReconcileAction) newAction(action *v1alpha1.Action, pipeline *v1alpha1.
 				Name:       pipeline.Name,
 				Generation: pipeline.Generation,
 			},
+			Transaction: v1alpha1.ActionSpecTransaction{
+				ID:    action.Spec.Transaction.ID,
+				Stage: action.Spec.Transaction.Stage + 1,
+			},
 			Upstream: v1alpha1.ActionSpecUpstream{
 				Name:     action.Name,
-				Status:   action.NotificationStatus(),
+				Status:   action.CompletionStatus(),
 				Pipeline: action.Spec.Pipeline.Name,
 				Via:      via,
-			},
-			Notification: v1alpha1.ActionSpecNotification{
-				Name: v1alpha1.NewName(),
 			},
 		},
 	}

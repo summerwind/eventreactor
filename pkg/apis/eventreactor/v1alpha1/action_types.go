@@ -23,8 +23,8 @@ import (
 )
 
 const (
-	NotificationStatusSuccess = "success"
-	NotificationStatusFailure = "failure"
+	CompletionStatusSuccess = "success"
+	CompletionStatusFailure = "failure"
 )
 
 type ActionSpecEvent struct {
@@ -38,6 +38,11 @@ type ActionSpecPipeline struct {
 	Generation int64  `json:"generation"`
 }
 
+type ActionSpecTransaction struct {
+	ID    string `json:"id"`
+	Stage int    `json:"stage"`
+}
+
 type ActionSpecUpstream struct {
 	Name     string   `json:"name"`
 	Status   string   `json:"status"`
@@ -45,18 +50,14 @@ type ActionSpecUpstream struct {
 	Via      []string `json:"via,omitempty"`
 }
 
-type ActionSpecNotification struct {
-	Name string `json:"name"`
-}
-
 // ActionSpec defines the desired state of Action
 type ActionSpec struct {
 	buildv1alpha1.BuildSpec
 
-	Event        ActionSpecEvent        `json:"event"`
-	Pipeline     ActionSpecPipeline     `json:"pipeline"`
-	Upstream     ActionSpecUpstream     `json:"upstream"`
-	Notification ActionSpecNotification `json:"notification"`
+	Event       ActionSpecEvent       `json:"event"`
+	Pipeline    ActionSpecPipeline    `json:"pipeline"`
+	Upstream    ActionSpecUpstream    `json:"upstream"`
+	Transaction ActionSpecTransaction `json:"transaction"`
 }
 
 // ActionStatus defines the observed state of Action
@@ -95,7 +96,7 @@ func (a Action) IsFailed() bool {
 	return (cond != nil && cond.Status == corev1.ConditionFalse)
 }
 
-func (a Action) NotificationStatus() string {
+func (a Action) CompletionStatus() string {
 	status := ""
 
 	cond := a.Status.BuildStatus.GetCondition(buildv1alpha1.BuildSucceeded)
@@ -105,9 +106,9 @@ func (a Action) NotificationStatus() string {
 
 	switch cond.Status {
 	case corev1.ConditionTrue:
-		status = NotificationStatusSuccess
+		status = CompletionStatusSuccess
 	case corev1.ConditionFalse:
-		status = NotificationStatusFailure
+		status = CompletionStatusFailure
 	}
 
 	return status
