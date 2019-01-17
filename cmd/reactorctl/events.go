@@ -12,6 +12,7 @@ func NewEventsCommand() *cobra.Command {
 	}
 
 	cmd.AddCommand(NewEventsListCommand())
+	cmd.AddCommand(NewEventsPublishCommand())
 
 	return cmd
 }
