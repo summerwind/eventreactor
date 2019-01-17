@@ -15,6 +15,7 @@ binary: generate fmt vet
 	CGO_ENABLED=0 go build -o bin/manager github.com/summerwind/eventreactor/cmd/manager
 	CGO_ENABLED=0 go build -o bin/event-receiver github.com/summerwind/eventreactor/cmd/event-receiver
 	CGO_ENABLED=0 go build -o bin/event-init github.com/summerwind/eventreactor/cmd/event-init
+	CGO_ENABLED=0 go build -o bin/reactorctl github.com/summerwind/eventreactor/cmd/reactorctl
 
 # Run manager against the configured Kubernetes cluster in ~/.kube/config
 manager: generate fmt vet
