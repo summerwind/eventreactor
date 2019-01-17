@@ -25,6 +25,6 @@ bin
 vendor
 
 # Do not keep binary
-manager
-event-receiver
-reactorctl
+cmd/manager/manager
+cmd/event-receiver/event-receiver
+cmd/reactorctl/reactorctl
