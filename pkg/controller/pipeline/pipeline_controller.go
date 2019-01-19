@@ -79,6 +79,11 @@ type ReconcilePipeline struct {
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
 // +kubebuilder:rbac:groups=eventreactor.summerwind.github.io,resources=pipelines,verbs=get;list;watch;update;patch
 func (r *ReconcilePipeline) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	var (
+		updated bool
+		trigger string
+	)
+
 	// Fetch the Pipeline instance
 	instance := &v1alpha1.Pipeline{}
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
@@ -92,23 +97,43 @@ func (r *ReconcilePipeline) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
-	if instance.Spec.Trigger.Event != nil {
-		eventType := instance.Spec.Trigger.Event.Type
+	pipeline := instance.DeepCopy()
 
+	if pipeline.ObjectMeta.Labels == nil {
+		pipeline.ObjectMeta.Labels = map[string]string{}
+	}
+
+	if instance.Spec.Trigger.Pipeline != nil {
+		trigger = v1alpha1.TriggerTypePipeline
+	}
+
+	if instance.Spec.Trigger.Event != nil {
+		trigger = v1alpha1.TriggerTypeEvent
+
+		eventType := instance.Spec.Trigger.Event.Type
 		val, ok := instance.ObjectMeta.Labels[v1alpha1.KeyEventType]
 		if !ok || eventType != val {
-			pipeline := instance.DeepCopy()
-
-			if pipeline.ObjectMeta.Labels == nil {
-				pipeline.ObjectMeta.Labels = map[string]string{}
-			}
 			pipeline.ObjectMeta.Labels[v1alpha1.KeyEventType] = eventType
+			updated = true
+		}
+	}
 
-			r.log.Info("Updating pipeline", "namespace", pipeline.Namespace, "name", pipeline.Name)
-			err = r.Update(context.TODO(), pipeline)
-			if err != nil {
-				return reconcile.Result{}, err
-			}
+	// No need to update if trigger is empty
+	if trigger == "" {
+		return reconcile.Result{}, err
+	}
+
+	val, ok := instance.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger]
+	if !ok || trigger != val {
+		pipeline.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger] = trigger
+		updated = true
+	}
+
+	if updated {
+		r.log.Info("Updating pipeline", "namespace", pipeline.Namespace, "name", pipeline.Name)
+		err = r.Update(context.TODO(), pipeline)
+		if err != nil {
+			return reconcile.Result{}, err
 		}
 	}
 
