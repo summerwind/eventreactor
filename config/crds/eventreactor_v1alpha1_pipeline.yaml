@@ -42,11 +42,14 @@ spec:
                   type: object
                 pipeline:
                   properties:
+                    name:
+                      type: string
                     selector:
                       type: object
                     status:
                       type: string
                   required:
+                  - name
                   - selector
                   type: object
               type: object

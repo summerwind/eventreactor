@@ -305,7 +305,13 @@ func (r *ReconcileAction) startPipelines(action *v1alpha1.Action) error {
 			continue
 		}
 
-		// Ignore if notification status is not matched
+		// Ignore if name is not matched
+		pn := pipeline.Spec.Trigger.Pipeline.Name
+		if pn != "" && pn != action.Spec.Pipeline.Name {
+			continue
+		}
+
+		// Ignore if status is not matched
 		status := pipeline.Spec.Trigger.Pipeline.Status
 		if status != "" && status != action.CompletionStatus() {
 			continue
@@ -317,8 +323,8 @@ func (r *ReconcileAction) startPipelines(action *v1alpha1.Action) error {
 			return err
 		}
 
-		// Ignore if labels does not match the label selector
-		if !selector.Matches(labels.Set(action.ObjectMeta.Labels)) {
+		// Ignore if labels does not match the selector
+		if !selector.Empty() && !selector.Matches(labels.Set(action.ObjectMeta.Labels)) {
 			continue
 		}
 
