@@ -286,7 +286,12 @@ func (r *ReconcileAction) getStepLog(namespace, podName, containerName string) (
 }
 
 func (r *ReconcileAction) startPipelines(action *v1alpha1.Action) error {
+	pipelineLabels := map[string]string{
+		v1alpha1.KeyPipelineTrigger: v1alpha1.TriggerTypePipeline,
+	}
+
 	opts := &client.ListOptions{Namespace: action.Namespace}
+	opts = opts.MatchingLabels(pipelineLabels)
 
 	pipelineList := &v1alpha1.PipelineList{}
 	err := r.List(context.TODO(), opts, pipelineList)
