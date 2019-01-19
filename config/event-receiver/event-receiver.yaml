@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: eventreactor-event-receiver
+  name: event-receiver
   namespace: default
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   creationTimestamp: null
-  name: eventreactor-event-receiver-role
+  name: event-receiver-role
 rules:
 - apiGroups:
   - eventreactor.summerwind.github.io
@@ -21,34 +21,34 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   creationTimestamp: null
-  name: eventreactor-event-receiver-rolebinding
+  name: event-receiver-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: eventreactor-event-receiver-role
+  name: event-receiver-role
 subjects:
 - kind: ServiceAccount
-  name: eventreactor-event-receiver
+  name: event-receiver
   namespace: default
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: eventreactor-event-receiver
+  name: event-receiver
   namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: eventreactor-event-receiver
+      app: event-receiver
   template:
     metadata:
       labels:
-        app: eventreactor-event-receiver
+        app: event-receiver
     spec:
       containers:
-      - name: eventreactor-event-receiver
-        image: summerwind/eventreactor-event-receiver:latest
+      - name: event-receiver
+        image: summerwind/event-receiver:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 14380
@@ -59,17 +59,17 @@ spec:
           limits:
             cpu: 100m
             memory: 30Mi
-      serviceAccountName: eventreactor-event-receiver
+      serviceAccountName: event-receiver
       terminationGracePeriodSeconds: 10
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: eventreactor-event-receiver
+  name: event-receiver
   namespace: default
 spec:
   selector:
-    app: eventreactor-event-receiver
+    app: event-receiver
   ports:
   - protocol: TCP
     port: 14380
