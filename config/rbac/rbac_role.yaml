@@ -64,6 +64,13 @@ rules:
   - watch
   - create
 - apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
   - eventreactor.summerwind.github.io
   resources:
   - pipelines

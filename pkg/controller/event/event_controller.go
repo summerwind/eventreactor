@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -37,6 +38,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	ControllerName = "event-controller"
+)
+
 // Add creates a new Event Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
@@ -46,16 +51,17 @@ func Add(mgr manager.Manager) error {
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileEvent{
-		Client: mgr.GetClient(),
-		scheme: mgr.GetScheme(),
-		log:    logf.Log.WithName("event-controller"),
+		Client:   mgr.GetClient(),
+		scheme:   mgr.GetScheme(),
+		recorder: mgr.GetRecorder(ControllerName),
+		log:      logf.Log.WithName(ControllerName),
 	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New("event-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
@@ -74,8 +80,9 @@ var _ reconcile.Reconciler = &ReconcileEvent{}
 // ReconcileEvent reconciles a Event object
 type ReconcileEvent struct {
 	client.Client
-	scheme *runtime.Scheme
-	log    logr.Logger
+	scheme   *runtime.Scheme
+	recorder record.EventRecorder
+	log      logr.Logger
 }
 
 // Reconcile reads that state of the cluster for a Event object and makes changes based on the state read
@@ -84,6 +91,7 @@ type ReconcileEvent struct {
 // +kubebuilder:rbac:groups=eventreactor.summerwind.github.io,resources=events,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=eventreactor.summerwind.github.io,resources=pipelines,verbs=get;list;watch
 // +kubebuilder:rbac:groups=eventreactor.summerwind.github.io,resources=actions,verbs=get;list;watch;create
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the Event instance
 	instance := &v1alpha1.Event{}
@@ -118,13 +126,15 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 
 	for _, pipeline := range pipelineList.Items {
 		if pipeline.Spec.Trigger.Event.Type != instance.Spec.Type {
-			r.log.Info("Mismatched event label", "pipeline", pipeline.Name)
+			r.log.Info("Ignored with mismatched event type", "pipeline", pipeline.Name)
+			r.recorder.Event(instance, "Warning", "InvalidPipeline", fmt.Sprintf("Ignored \"%s/%s\" with mismatched event type", pipeline.Namespace, pipeline.Name))
 			continue
 		}
 
 		matched, err := regexp.MatchString(pipeline.Spec.Trigger.Event.Source, instance.Spec.Source)
 		if err != nil {
-			r.log.Error(err, "Invalid source pattern", "pipeline", pipeline.Name)
+			r.log.Error(err, "Ignored with invalid source pattern", "pipeline", pipeline.Name)
+			r.recorder.Event(instance, "Warning", "InvalidPipeline", fmt.Sprintf("Ignored \"%s/%s\" with invalid source pattern", pipeline.Namespace, pipeline.Name))
 			continue
 		}
 		if !matched {
@@ -140,11 +150,13 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 		err = r.Get(context.TODO(), actionKey, action)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				r.log.Info("Creating new action", "namespace", action.Namespace, "name", action.Name)
 				err = r.Create(context.TODO(), action)
 				if err != nil {
 					return reconcile.Result{}, err
 				}
+
+				r.log.Info("Created action", "namespace", action.Namespace, "name", action.Name)
+				r.recorder.Event(instance, "Normal", "Created", fmt.Sprintf("Created action %s/%s", action.Namespace, action.Name))
 			} else if err != nil {
 				return reconcile.Result{}, err
 			}
@@ -155,11 +167,13 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 	event := instance.DeepCopy()
 	event.Status.DispatchTime = &ct
 
-	r.log.Info("Updating event", "namespace", event.Namespace, "name", event.Name)
 	err = r.Update(context.TODO(), event)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+
+	r.log.Info("Successfully dispatched", "namespace", event.Namespace, "name", event.Name)
+	r.recorder.Event(instance, "Normal", "Dispatched", "Successfully dispatched")
 
 	return reconcile.Result{}, nil
 }
