@@ -61,10 +61,16 @@ func eventsListRun(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
+	start := len(eventList.Items) - limit
+	if start < 0 {
+		start = 0
+	}
+	events := eventList.Items[start:]
+
 	writer := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 	fmt.Fprintln(writer, "NAME\tTYPE\tDATE")
 
-	for i, ev := range eventList.Items {
+	for i, ev := range events {
 		if i >= limit {
 			break
 		}

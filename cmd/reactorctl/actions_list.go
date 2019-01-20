@@ -71,10 +71,16 @@ func actionsListRun(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	writer := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
-	fmt.Fprintln(writer, "NAME\tPIPELINE\tSTATUS\tDATE")
+	start := len(actionList.Items) - limit
+	if start < 0 {
+		start = 0
+	}
+	actions := actionList.Items[start:]
 
-	for i, a := range actionList.Items {
+	writer := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+	fmt.Fprintln(writer, "NAME\tPIPELINE\tEVENT\tSTATUS\tDATE")
+
+	for i, a := range actions {
 		if i >= limit {
 			break
 		}
@@ -94,7 +100,7 @@ func actionsListRun(cmd *cobra.Command, args []string) error {
 		}
 
 		date := a.ObjectMeta.CreationTimestamp.Format("2006-01-02 15:04:05")
-		fmt.Fprintf(writer, "%s\t%s\t%s\t%s\n", a.Name, a.Spec.Pipeline.Name, status, date)
+		fmt.Fprintf(writer, "%s\t%s\t%s\t%s\t%s\n", a.Name, a.Spec.Pipeline.Name, a.Spec.Event.Name, status, date)
 	}
 	writer.Flush()
 
