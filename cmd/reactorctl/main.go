@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	buildscheme "github.com/knative/build/pkg/client/clientset/versioned/scheme"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -18,6 +20,7 @@ import (
 var (
 	namespace string
 	c         client.Client
+	api       kubernetes.Interface
 )
 
 func preRun(cmd *cobra.Command, args []string) error {
@@ -42,11 +45,17 @@ func preRun(cmd *cobra.Command, args []string) error {
 	}
 
 	sc := scheme.Scheme
+	buildscheme.AddToScheme(sc)
 	if err := apis.AddToScheme(sc); err != nil {
 		return err
 	}
 
 	c, err = client.New(cfg, client.Options{Scheme: sc, Mapper: mapper})
+	if err != nil {
+		return err
+	}
+
+	api, err = kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return err
 	}

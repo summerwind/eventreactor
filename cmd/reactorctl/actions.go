@@ -13,6 +13,7 @@ func NewActionsCommand() *cobra.Command {
 
 	cmd.AddCommand(NewActionsListCommand())
 	cmd.AddCommand(NewActionsGetCommand())
+	cmd.AddCommand(NewActionsLogsCommand())
 
 	return cmd
 }
