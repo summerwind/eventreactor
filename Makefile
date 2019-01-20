@@ -1,7 +1,7 @@
 VERSION = 0.1.0
 
 IMAGE_CONTROLLER     := summerwind/eventreactor-controller
-IMAGE_EVENT_RECEIVER := summerwind/eventreactor-event-receiver
+IMAGE_EVENT_RECEIVER := summerwind/event-receiver
 IMAGE_EVENT_INIT     := summerwind/event-init
 
 all: test binary
@@ -63,6 +63,6 @@ docker-push:
 	#docker push $(IMAGE_CONTROLLER):$(VERSION)
 	docker push $(IMAGE_EVENT_RECEIVER):latest
 	#docker push $(IMAGE_EVENT_RECEIVER):$(VERSION)
-	#docker push $(IMAGE_EVENT_INIT):latest
+	docker push $(IMAGE_EVENT_INIT):latest
 	#docker push $(IMAGE_EVENT_INIT):$(VERSION)
 
