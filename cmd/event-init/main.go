@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	eventDefaultPath = "/builder/home/event"
+	eventDefaultPath = "/event"
 )
 
 func run(cmd *cobra.Command, args []string) error {
@@ -83,6 +83,18 @@ func run(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	idPath := filepath.Join(baseDir, "id")
+	err = ioutil.WriteFile(idPath, []byte(ev.Spec.ID), 0644)
+	if err != nil {
+		return err
+	}
+
+	timePath := filepath.Join(baseDir, "time")
+	err = ioutil.WriteFile(timePath, []byte(ev.Spec.Time.String()), 0644)
+	if err != nil {
+		return err
 	}
 
 	typePath := filepath.Join(baseDir, "type")
