@@ -29,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -47,7 +48,8 @@ import (
 )
 
 const (
-	UpstreamLimit = 10
+	ControllerName = "action-controller"
+	UpstreamLimit  = 10
 )
 
 // Add creates a new Action Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
@@ -59,10 +61,11 @@ func Add(mgr manager.Manager) error {
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileAction{
-		Client: mgr.GetClient(),
-		scheme: mgr.GetScheme(),
-		api:    kubernetes.NewForConfigOrDie(mgr.GetConfig()),
-		log:    logf.Log.WithName("action-controller"),
+		Client:   mgr.GetClient(),
+		scheme:   mgr.GetScheme(),
+		recorder: mgr.GetRecorder(ControllerName),
+		log:      logf.Log.WithName(ControllerName),
+		api:      kubernetes.NewForConfigOrDie(mgr.GetConfig()),
 	}
 }
 
@@ -72,7 +75,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	buildscheme.AddToScheme(mgr.GetScheme())
 
 	// Create a new controller
-	c, err := controller.New("action-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
@@ -89,7 +92,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		OwnerType:    &v1alpha1.Action{},
 	})
 	if err != nil {
-		fmt.Printf("%v\n", err)
 		return err
 	}
 
@@ -101,9 +103,10 @@ var _ reconcile.Reconciler = &ReconcileAction{}
 // ReconcileAction reconciles a Action object
 type ReconcileAction struct {
 	client.Client
-	scheme *runtime.Scheme
-	api    kubernetes.Interface
-	log    logr.Logger
+	scheme   *runtime.Scheme
+	recorder record.EventRecorder
+	api      kubernetes.Interface
+	log      logr.Logger
 }
 
 // Reconcile reads that state of the cluster for a Action object and makes changes based on the state read
@@ -111,6 +114,7 @@ type ReconcileAction struct {
 // +kubebuilder:rbac:groups=eventreactor.summerwind.github.io,resources=actions,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=build.knative.dev,resources=builds,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups=,resources=pods/log,verbs=get;list
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the Action instance
 	instance := &v1alpha1.Action{}
@@ -137,7 +141,8 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 				return reconcile.Result{}, err
 			}
 		} else {
-			r.log.Info("Next pipelines was not started due to the upstream limit", "namespace", instance.Namespace, "name", instance.Name)
+			r.log.Info("Exceeded the upstream limit", "namespace", instance.Namespace, "name", instance.Name)
+			r.recorder.Event(instance, "Warning", "UpstreamLimitExceeded", "Exceeded the upstream limit.")
 		}
 
 		t := metav1.Now()
@@ -145,11 +150,13 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 		action := instance.DeepCopy()
 		action.Status.DispatchTime = &t
 
-		r.log.Info("Updating action", "namespace", action.Namespace, "name", action.Name)
 		err = r.Update(context.TODO(), action)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
+
+		r.log.Info("Dispatched", "namespace", action.Namespace, "name", action.Name)
+		r.recorder.Event(instance, "Normal", "Dispatched", "Successfully dispatched")
 	}
 
 	build := r.newBuild(instance)
@@ -161,11 +168,13 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 	err = r.Get(context.TODO(), request.NamespacedName, build)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			r.log.Info("Creating build", "namespace", build.Namespace, "name", build.Name)
 			err = r.Create(context.TODO(), build)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
+
+			r.log.Info("Created build", "namespace", build.Namespace, "name", build.Name)
+			r.recorder.Event(instance, "Normal", "Created", fmt.Sprintf("Created build %s/%s", build.Namespace, build.Name))
 
 			return reconcile.Result{}, nil
 		} else if err != nil {
@@ -187,7 +196,8 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 
 				stepLog, err := r.getStepLog(build.Status.Cluster.Namespace, build.Status.Cluster.PodName, stepName)
 				if err != nil {
-					r.log.Error(err, "Unable to get step log", "build", build.Name, "step", stepName)
+					r.log.Error(err, "Failed to read the step log", "build", build.Name, "step", stepName)
+					r.recorder.Event(instance, "Warning", "FailedReadLog", fmt.Sprintf("Failed to read the step \"%s\" log", stepName))
 					continue
 				}
 
@@ -195,11 +205,13 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 			}
 		}
 
-		r.log.Info("Updating action", "namespace", action.Namespace, "name", action.Name)
 		err = r.Update(context.TODO(), action)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
+
+		r.log.Info("Synced state with build", "namespace", build.Namespace, "name", build.Name)
+		r.recorder.Event(instance, "Normal", "Synced", fmt.Sprintf("Synced state with build %s/%s", build.Namespace, action.Name))
 	}
 
 	return reconcile.Result{}, nil
@@ -342,11 +354,13 @@ func (r *ReconcileAction) startPipelines(action *v1alpha1.Action) error {
 		err = r.Get(context.TODO(), naKey, na)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				r.log.Info("Creating next action", "namespace", na.Namespace, "name", na.Name)
 				err = r.Create(context.TODO(), na)
 				if err != nil {
 					return err
 				}
+
+				r.log.Info("Created action", "namespace", na.Namespace, "name", na.Name)
+				r.recorder.Event(action, "Normal", "Created", fmt.Sprintf("Created action %s/%s", na.Namespace, na.Name))
 			} else if err != nil {
 				return err
 			}

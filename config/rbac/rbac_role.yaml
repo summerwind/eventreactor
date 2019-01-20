@@ -35,6 +35,13 @@ rules:
   - get
   - list
 - apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
   - eventreactor.summerwind.github.io
   resources:
   - events
