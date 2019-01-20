@@ -91,7 +91,7 @@ func eventsPublishRun(cmd *cobra.Command, args []string) error {
 	ev := &v1alpha1.Event{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
-			Name:      v1alpha1.NewName(),
+			Name:      v1alpha1.NewID(),
 			Labels: map[string]string{
 				v1alpha1.KeyEventType: es.Type,
 			},

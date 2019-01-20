@@ -371,7 +371,7 @@ func (r *ReconcileAction) startPipelines(action *v1alpha1.Action) error {
 }
 
 func (r *ReconcileAction) newAction(action *v1alpha1.Action, pipeline *v1alpha1.Pipeline) *v1alpha1.Action {
-	name := fmt.Sprintf("%s-%s", action.Spec.Transaction.ID, v1alpha1.NewName())
+	name := v1alpha1.NewID()
 
 	labels := map[string]string{
 		v1alpha1.KeyEventName:     action.Spec.Event.Name,

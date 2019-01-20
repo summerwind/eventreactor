@@ -179,13 +179,12 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 }
 
 func (r *ReconcileEvent) newAction(ev *v1alpha1.Event, pipeline *v1alpha1.Pipeline) *v1alpha1.Action {
-	tid := v1alpha1.NewName()
-	name := fmt.Sprintf("%s-%s", tid, v1alpha1.NewName())
+	name := v1alpha1.NewID()
 
 	labels := map[string]string{
 		v1alpha1.KeyEventName:     ev.Name,
 		v1alpha1.KeyPipelineName:  pipeline.Name,
-		v1alpha1.KeyTransactionID: tid,
+		v1alpha1.KeyTransactionID: name,
 	}
 
 	for key, val := range pipeline.ObjectMeta.Labels {
@@ -212,7 +211,7 @@ func (r *ReconcileEvent) newAction(ev *v1alpha1.Event, pipeline *v1alpha1.Pipeli
 				Generation: pipeline.Generation,
 			},
 			Transaction: v1alpha1.ActionSpecTransaction{
-				ID:    tid,
+				ID:    name,
 				Stage: 1,
 			},
 		},

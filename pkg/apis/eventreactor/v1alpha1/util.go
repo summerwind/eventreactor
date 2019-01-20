@@ -18,11 +18,9 @@ func init() {
 	entropy = rand.New(rand.NewSource(t.UnixNano()))
 }
 
-// NewName returns a resource name based on ULID.
-func NewName() string {
-	t := ulid.MaxTime() - ulid.Now()
-
-	id, err := ulid.New(t, entropy)
+// NewID returns a ULID.
+func NewID() string {
+	id, err := ulid.New(ulid.Now(), entropy)
 	if err != nil {
 		panic(fmt.Sprintf("Unable to generate ULID: %s", err))
 	}
