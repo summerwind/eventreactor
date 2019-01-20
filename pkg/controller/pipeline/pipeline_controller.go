@@ -21,6 +21,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -33,6 +34,10 @@ import (
 	"github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
 )
 
+const (
+	ControllerName = "pipeline-controller"
+)
+
 // Add creates a new Pipeline Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
@@ -42,16 +47,17 @@ func Add(mgr manager.Manager) error {
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcilePipeline{
-		Client: mgr.GetClient(),
-		scheme: mgr.GetScheme(),
-		log:    logf.Log.WithName("pipeline-controller"),
+		Client:   mgr.GetClient(),
+		scheme:   mgr.GetScheme(),
+		recorder: mgr.GetRecorder(ControllerName),
+		log:      logf.Log.WithName(ControllerName),
 	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New("pipeline-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
@@ -70,14 +76,16 @@ var _ reconcile.Reconciler = &ReconcilePipeline{}
 // ReconcilePipeline reconciles a Pipeline object
 type ReconcilePipeline struct {
 	client.Client
-	scheme *runtime.Scheme
-	log    logr.Logger
+	scheme   *runtime.Scheme
+	recorder record.EventRecorder
+	log      logr.Logger
 }
 
 // Reconcile reads that state of the cluster for a Pipeline object and makes changes based on the state read
 // and what is in the Pipeline.Spec
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
 // +kubebuilder:rbac:groups=eventreactor.summerwind.github.io,resources=pipelines,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 func (r *ReconcilePipeline) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	var (
 		updated bool
@@ -130,11 +138,13 @@ func (r *ReconcilePipeline) Reconcile(request reconcile.Request) (reconcile.Resu
 	}
 
 	if updated {
-		r.log.Info("Updating pipeline", "namespace", pipeline.Namespace, "name", pipeline.Name)
 		err = r.Update(context.TODO(), pipeline)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
+
+		r.log.Info("Updated pipeline", "namespace", pipeline.Namespace, "name", pipeline.Name)
+		r.recorder.Event(instance, "Normal", "Labeled", "Successfully labeled")
 	}
 
 	return reconcile.Result{}, nil
