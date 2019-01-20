@@ -359,8 +359,8 @@ func (r *ReconcileAction) startPipelines(action *v1alpha1.Action) error {
 					return err
 				}
 
-				r.log.Info("Created action", "namespace", na.Namespace, "name", na.Name)
-				r.recorder.Event(action, "Normal", "Created", fmt.Sprintf("Created action %s/%s", na.Namespace, na.Name))
+				r.log.Info("Triggered next action", "namespace", na.Namespace, "name", na.Name)
+				r.recorder.Event(action, "Normal", "Triggered", fmt.Sprintf("Triggered next action %s/%s", na.Namespace, na.Name))
 			} else if err != nil {
 				return err
 			}
