@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -14,6 +15,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -38,11 +40,84 @@ var allowedContentType = []string{
 	"application/json",
 	"application/xml",
 	"application/x-www-form-urlencoded",
+	"application/cloudevents+json",
+}
+
+type CloudEvent struct {
+	SpecVersion string          `json:"specversion"`
+	Type        string          `json:"type"`
+	Source      string          `json:"source"`
+	ID          string          `json:"id"`
+	Time        string          `json:"time"`
+	SchemaURL   string          `json:"schemeurl"`
+	ContentType string          `json:"contenttype"`
+	Data        json.RawMessage `json:"data"`
 }
 
 // logError writes a meesage to stderr.
 func logError(msg string) {
 	fmt.Fprintln(os.Stderr, msg)
+}
+
+func parseBinaryContent(r *http.Request, event *v1alpha1.Event) error {
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+
+	event.Spec = v1alpha1.EventSpec{
+		SpecVersion: r.Header.Get("CE-SpecVersion"),
+		Type:        r.Header.Get("CE-Type"),
+		Source:      r.Header.Get("CE-Source"),
+		ID:          r.Header.Get("CE-ID"),
+		SchemaURL:   r.Header.Get("CE-SchemaURL"),
+		ContentType: r.Header.Get("Content-Type"),
+		Data:        string(b),
+	}
+
+	if r.Header.Get("CE-Time") != "" {
+		t, err := time.Parse(time.RFC3339, r.Header.Get("CE-Time"))
+		if err == nil {
+			et := metav1.NewTime(t)
+			event.Spec.Time = &et
+		}
+	}
+
+	return nil
+}
+
+func parseStructuredContent(r *http.Request, event *v1alpha1.Event) error {
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+
+	ce := &CloudEvent{}
+	err = json.Unmarshal(b, ce)
+	if err != nil {
+		return err
+	}
+	fmt.Println(ce)
+
+	event.Spec = v1alpha1.EventSpec{
+		SpecVersion: ce.SpecVersion,
+		Type:        ce.Type,
+		Source:      ce.Source,
+		ID:          ce.ID,
+		SchemaURL:   ce.SchemaURL,
+		ContentType: ce.ContentType,
+		Data:        string(ce.Data),
+	}
+
+	if ce.Time != "" {
+		t, err := time.Parse(time.RFC3339, ce.Time)
+		if err == nil {
+			et := metav1.NewTime(t)
+			event.Spec.Time = &et
+		}
+	}
+
+	return nil
 }
 
 // eventHandler processes requests to submit an Event
@@ -72,50 +147,40 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		logError(fmt.Sprintf("Unable to read the request body: %v", err))
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
+	event := &v1alpha1.Event{}
 
-	eventType := r.Header.Get("CE-Type")
-
-	ev := &v1alpha1.Event{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      v1alpha1.NewID(),
-			Labels: map[string]string{
-				v1alpha1.KeyEventType: eventType,
-			},
-		},
-		Spec: v1alpha1.EventSpec{
-			SpecVersion: r.Header.Get("CE-SpecVersion"),
-			Type:        eventType,
-			Source:      r.Header.Get("CE-Source"),
-			ID:          r.Header.Get("CE-ID"),
-			SchemaURL:   r.Header.Get("CE-SchemaURL"),
-			ContentType: r.Header.Get("Content-Type"),
-			Data:        string(b),
-		},
-	}
-
-	if r.Header.Get("CE-Time") != "" {
-		t, err := time.Parse(time.RFC3339, r.Header.Get("CE-Time"))
-		if err == nil {
-			et := metav1.NewTime(t)
-			ev.Spec.Time = &et
+	if contentType == "application/cloudevents+json" {
+		err := parseStructuredContent(r, event)
+		if err != nil {
+			logError(fmt.Sprintf("Unable to parse structured content: %v", err))
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+	} else {
+		err := parseBinaryContent(r, event)
+		if err != nil {
+			logError(fmt.Sprintf("Unable to parse binary content: %v", err))
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
 		}
 	}
 
-	err = c.Create(context.TODO(), ev)
+	event.ObjectMeta = metav1.ObjectMeta{
+		Namespace: namespace,
+		Name:      v1alpha1.NewID(),
+		Labels: map[string]string{
+			v1alpha1.KeyEventType: event.Spec.Type,
+		},
+	}
+
+	err := c.Create(context.TODO(), event)
 	if err != nil {
 		logError(fmt.Sprintf("Unable to create event: %v", err))
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("remote_addr:%s name:%s type:%s", r.RemoteAddr, ev.Name, ev.Spec.Type)
+	log.Printf("remote_addr:%s name:%s type:%s", r.RemoteAddr, event.Name, event.Spec.Type)
 }
 
 func run(cmd *cobra.Command, args []string) error {
