@@ -13,32 +13,8 @@ RUN CGO_ENABLED=0 go build -o bin/event-init github.com/summerwind/eventreactor/
 
 #################################################
 
-FROM scratch AS controller
+FROM scratch
 
-COPY --from=builder /go/src/github.com/summerwind/eventreactor/bin/manager /bin/manager
+COPY --from=builder /go/src/github.com/summerwind/eventreactor/bin/* /bin/
 
 ENTRYPOINT ["/bin/manager"]
-
-#################################################
-
-FROM scratch AS event-receiver
-
-COPY --from=builder /go/src/github.com/summerwind/eventreactor/bin/event-receiver /bin/event-receiver
-
-ENTRYPOINT ["/bin/event-receiver"]
-
-#################################################
-
-FROM scratch AS event-cleaner
-
-COPY --from=builder /go/src/github.com/summerwind/eventreactor/bin/event-cleaner /bin/event-cleaner
-
-ENTRYPOINT ["/bin/event-cleaner"]
-
-#################################################
-
-FROM scratch AS event-init
-
-COPY --from=builder /go/src/github.com/summerwind/eventreactor/bin/event-init /bin/event-init
-
-ENTRYPOINT ["/bin/event-init"]

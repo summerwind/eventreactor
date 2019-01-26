@@ -48,8 +48,9 @@ spec:
     spec:
       containers:
       - name: event-receiver
-        image: summerwind/event-receiver:latest
+        image: summerwind/eventreactor:latest
         imagePullPolicy: Always
+        command: ["/bin/event-receiver"]
         ports:
         - containerPort: 14380
         resources:

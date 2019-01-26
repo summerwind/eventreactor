@@ -1,10 +1,5 @@
 VERSION = 0.1.0
 
-IMAGE_CONTROLLER     := summerwind/eventreactor-controller
-IMAGE_EVENT_RECEIVER := summerwind/event-receiver
-IMAGE_EVENT_CLEANER  := summerwind/event-cleaner
-IMAGE_EVENT_INIT     := summerwind/event-init
-
 all: test binary
 
 # Run tests
@@ -55,19 +50,9 @@ generate:
 
 # Build the docker image
 docker-build: test
-	docker build -t $(IMAGE_CONTROLLER):latest -t $(IMAGE_CONTROLLER):$(VERSION) --target controller .
-	docker build -t $(IMAGE_EVENT_RECEIVER):latest  -t $(IMAGE_EVENT_RECEIVER):$(VERSION)  --target event-receiver .
-	docker build -t $(IMAGE_EVENT_CLEANER):latest  -t $(IMAGE_EVENT_CLEANER):$(VERSION)  --target event-cleaner .
-	docker build -t $(IMAGE_EVENT_INIT):latest -t $(IMAGE_EVENT_INIT):$(VERSION) --target event-init .
+	docker build -t summerwind/eventreactor:latest -t summerwind/eventreactor:$(VERSION) .
 
 # Push the docker image
 docker-push:
-	docker push $(IMAGE_CONTROLLER):latest
-	#docker push $(IMAGE_CONTROLLER):$(VERSION)
-	docker push $(IMAGE_EVENT_RECEIVER):latest
-	#docker push $(IMAGE_EVENT_RECEIVER):$(VERSION)
-	docker push $(IMAGE_EVENT_CLEANER):latest
-	#docker push $(IMAGE_EVENT_CLEANER):$(VERSION)
-	docker push $(IMAGE_EVENT_INIT):latest
-	#docker push $(IMAGE_EVENT_INIT):$(VERSION)
+	docker push summerwind/eventreactor:latest
 

@@ -26,8 +26,9 @@ spec:
     spec:
       containers:
       - name: eventreactor-controller
-        image: summerwind/eventreactor-controller:latest
+        image: summerwind/eventreactor:latest
         imagePullPolicy: Always
+        command: ["/bin/manager"]
         resources:
           requests:
             cpu: 100m

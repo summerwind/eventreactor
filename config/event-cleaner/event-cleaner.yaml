@@ -57,12 +57,8 @@ spec:
         spec:
           containers:
           - name: event-cleaner
-            image: summerwind/event-cleaner:latest
-            env:
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+            image: summerwind/eventreactor:latest
+            command: ["/bin/event-cleaner"]
             args:
             - "--namespace"
             - "$(NAMESPACE)"
@@ -70,5 +66,10 @@ spec:
             - "336h"
             - "--action-retention-period"
             - "336h"
+            env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
           serviceAccountName: event-cleaner
           restartPolicy: Never
