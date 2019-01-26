@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -24,8 +25,20 @@ import (
 
 var (
 	namespace string
-	c         client.Client
+	addr      string
+	port      int
+	certFile  string
+	keyFile   string
+
+	c client.Client
 )
+
+var allowedContentType = []string{
+	"text/",
+	"application/json",
+	"application/xml",
+	"application/x-www-form-urlencoded",
+}
 
 // logError writes a meesage to stderr.
 func logError(msg string) {
@@ -36,6 +49,26 @@ func logError(msg string) {
 func eventHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Not Implemented", http.StatusNotImplemented)
+		return
+	}
+
+	contentType := r.Header.Get("Content-Type")
+	if contentType == "" {
+		logError("Header 'Content-Type' missing")
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	allowed := false
+	for _, prefix := range allowedContentType {
+		if strings.HasPrefix(contentType, prefix) {
+			allowed = true
+			break
+		}
+	}
+	if !allowed {
+		logError(fmt.Sprintf("Invalid content type: %s", contentType))
+		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
@@ -86,29 +119,6 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	var err error
-
-	namespace, err = cmd.Flags().GetString("namespace")
-	if err != nil {
-		return err
-	}
-	addr, err := cmd.Flags().GetString("bind-address")
-	if err != nil {
-		return err
-	}
-	port, err := cmd.Flags().GetInt("port")
-	if err != nil {
-		return err
-	}
-	certFile, err := cmd.Flags().GetString("tls-cert-file")
-	if err != nil {
-		return err
-	}
-	keyFile, err := cmd.Flags().GetString("tls-private-key-file")
-	if err != nil {
-		return err
-	}
-
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return err
@@ -170,11 +180,11 @@ func main() {
 		SilenceUsage:  true,
 	}
 
-	cmd.Flags().StringP("namespace", "n", "default", "The namespace to create Event resources")
-	cmd.Flags().String("bind-address", "0.0.0.0", "The IP address on which to listen")
-	cmd.Flags().Int("port", 14380, "The port on which to listen")
-	cmd.Flags().String("tls-cert-file", "", "File containing the default x509 Certificate for HTTPS")
-	cmd.Flags().String("tls-private-key-file", "", "File containing the default x509 private key matching --tls-cert-file")
+	cmd.Flags().StringVarP(&namespace, "namespace", "n", "default", "The namespace to create Event resources")
+	cmd.Flags().StringVar(&addr, "bind-address", "0.0.0.0", "The IP address on which to listen")
+	cmd.Flags().IntVar(&port, "port", 14380, "The port on which to listen")
+	cmd.Flags().StringVar(&certFile, "tls-cert-file", "", "File containing the default x509 Certificate for HTTPS")
+	cmd.Flags().StringVar(&keyFile, "tls-private-key-file", "", "File containing the default x509 private key matching --tls-cert-file")
 
 	err := cmd.Execute()
 	if err != nil {
