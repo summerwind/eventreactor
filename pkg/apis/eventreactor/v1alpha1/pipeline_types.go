@@ -28,7 +28,7 @@ type PipelineTriggerEvent struct {
 	Type string `json:"type"`
 
 	// +kubebuilder:validation:MinLength=1
-	Source string `json:"source"`
+	SourcePattern string `json:"sourcePattern"`
 }
 
 type PipelineTriggerPipeline struct {

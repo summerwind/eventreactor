@@ -44,8 +44,8 @@ func TestReconcile(t *testing.T) {
 		Spec: v1alpha1.PipelineSpec{
 			Trigger: v1alpha1.PipelineTrigger{
 				Event: &v1alpha1.PipelineTriggerEvent{
-					Type:   "io.github.summerwind.eventreactor.test",
-					Source: "/eventreactor/test/controller",
+					Type:          "io.github.summerwind.eventreactor.test",
+					SourcePattern: "/eventreactor/test/controller",
 				},
 			},
 		},

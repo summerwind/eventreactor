@@ -52,8 +52,8 @@ func TestStoragePipeline(t *testing.T) {
 
 			Trigger: PipelineTrigger{
 				Event: &PipelineTriggerEvent{
-					Type:   "io.github.summerwind.eventreactor.test",
-					Source: "/eventreactor/test/hello",
+					Type:          "io.github.summerwind.eventreactor.test",
+					SourcePattern: "/eventreactor/test/hello",
 				},
 			},
 		},
@@ -114,8 +114,8 @@ func TestEventTriggerTypeValidation(t *testing.T) {
 
 				Trigger: PipelineTrigger{
 					Event: &PipelineTriggerEvent{
-						Type:   test.t,
-						Source: "/eventreactor/test/hello",
+						Type:          test.t,
+						SourcePattern: "/eventreactor/test/hello",
 					},
 				},
 			},
@@ -161,8 +161,8 @@ func TestEventTriggerSourceValidation(t *testing.T) {
 
 				Trigger: PipelineTrigger{
 					Event: &PipelineTriggerEvent{
-						Type:   "io.github.summerwind.eventreactor.test",
-						Source: test.source,
+						Type:          "io.github.summerwind.eventreactor.test",
+						SourcePattern: test.source,
 					},
 				},
 			},

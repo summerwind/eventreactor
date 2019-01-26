@@ -28,7 +28,7 @@ spec:
               properties:
                 event:
                   properties:
-                    source:
+                    sourcePattern:
                       minLength: 1
                       type: string
                     type:
@@ -38,7 +38,7 @@ spec:
                       type: string
                   required:
                   - type
-                  - source
+                  - sourcePattern
                   type: object
                 pipeline:
                   properties:

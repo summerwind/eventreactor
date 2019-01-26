@@ -131,7 +131,7 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 			continue
 		}
 
-		matched, err := regexp.MatchString(pipeline.Spec.Trigger.Event.Source, instance.Spec.Source)
+		matched, err := regexp.MatchString(pipeline.Spec.Trigger.Event.SourcePattern, instance.Spec.Source)
 		if err != nil {
 			r.log.Error(err, "Ignored with invalid source pattern", "pipeline", pipeline.Name)
 			r.recorder.Event(instance, "Warning", "InvalidPipeline", fmt.Sprintf("Ignored \"%s/%s\" with invalid source pattern", pipeline.Namespace, pipeline.Name))
