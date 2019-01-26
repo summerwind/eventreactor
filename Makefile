@@ -2,6 +2,7 @@ VERSION = 0.1.0
 
 IMAGE_CONTROLLER     := summerwind/eventreactor-controller
 IMAGE_EVENT_RECEIVER := summerwind/event-receiver
+IMAGE_EVENT_CLEANER  := summerwind/event-cleaner
 IMAGE_EVENT_INIT     := summerwind/event-init
 
 all: test binary
@@ -14,6 +15,7 @@ test: generate fmt vet manifests
 binary: generate fmt vet
 	CGO_ENABLED=0 go build -o bin/manager github.com/summerwind/eventreactor/cmd/manager
 	CGO_ENABLED=0 go build -o bin/event-receiver github.com/summerwind/eventreactor/cmd/event-receiver
+	CGO_ENABLED=0 go build -o bin/event-cleaner github.com/summerwind/eventreactor/cmd/event-cleaner
 	CGO_ENABLED=0 go build -o bin/event-init github.com/summerwind/eventreactor/cmd/event-init
 	CGO_ENABLED=0 go build -o bin/reactorctl github.com/summerwind/eventreactor/cmd/reactorctl
 
@@ -55,6 +57,7 @@ generate:
 docker-build: test
 	docker build -t $(IMAGE_CONTROLLER):latest -t $(IMAGE_CONTROLLER):$(VERSION) --target controller .
 	docker build -t $(IMAGE_EVENT_RECEIVER):latest  -t $(IMAGE_EVENT_RECEIVER):$(VERSION)  --target event-receiver .
+	docker build -t $(IMAGE_EVENT_CLEANER):latest  -t $(IMAGE_EVENT_CLEANER):$(VERSION)  --target event-cleaner .
 	docker build -t $(IMAGE_EVENT_INIT):latest -t $(IMAGE_EVENT_INIT):$(VERSION) --target event-init .
 
 # Push the docker image
@@ -63,6 +66,8 @@ docker-push:
 	#docker push $(IMAGE_CONTROLLER):$(VERSION)
 	docker push $(IMAGE_EVENT_RECEIVER):latest
 	#docker push $(IMAGE_EVENT_RECEIVER):$(VERSION)
+	docker push $(IMAGE_EVENT_CLEANER):latest
+	#docker push $(IMAGE_EVENT_CLEANER):$(VERSION)
 	docker push $(IMAGE_EVENT_INIT):latest
 	#docker push $(IMAGE_EVENT_INIT):$(VERSION)
 
