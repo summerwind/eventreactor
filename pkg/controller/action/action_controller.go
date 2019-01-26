@@ -294,6 +294,12 @@ func (r *ReconcileAction) getStepLog(namespace, podName, containerName string) (
 		return "", err
 	}
 
+	// Limit the maximum size to 64 KiB
+	if len(b) > 65536 {
+		start := len(b) - 65536
+		b = b[start:]
+	}
+
 	return string(b), nil
 }
 
