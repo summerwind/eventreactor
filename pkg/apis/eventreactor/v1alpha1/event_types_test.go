@@ -29,44 +29,51 @@ import (
 
 func TestStorageEvent(t *testing.T) {
 	now := metav1.Now()
-	key := types.NamespacedName{
-		Name:      "foo",
-		Namespace: "default",
-	}
-	created := &Event{
+
+	event := &Event{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo",
+			Name:      "test",
 			Namespace: "default",
 		},
 		Spec: EventSpec{
 			Type:        "eventreactor.test",
-			Source:      "/eventreactor/apis/v1alpha1/events",
+			Source:      "/eventreactor/test/storage-event",
 			ID:          "4f6e2a13-592a-4c39-b4e4-b7194f4a4318",
 			Time:        &now,
+			SchemaURL:   "https://eventreactor.summerwind.github.io",
 			ContentType: "application/json",
 			Data:        "{\"test\":true}",
 		},
 	}
+
 	g := gomega.NewGomegaWithT(t)
 
-	// Test Create
-	fetched := &Event{}
-	g.Expect(c.Create(context.TODO(), created)).NotTo(gomega.HaveOccurred())
+	// Create new event
+	g.Expect(c.Create(context.TODO(), event)).NotTo(gomega.HaveOccurred())
 
-	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(gomega.HaveOccurred())
-	g.Expect(fetched).To(gomega.Equal(created))
+	// Get event
+	key := types.NamespacedName{
+		Name:      event.Name,
+		Namespace: event.Namespace,
+	}
+	saved := &Event{}
+	g.Expect(c.Get(context.TODO(), key, saved)).NotTo(gomega.HaveOccurred())
+	g.Expect(saved).To(gomega.Equal(event))
 
-	// Test Updating the Labels
-	updated := fetched.DeepCopy()
-	updated.Labels = map[string]string{"hello": "world"}
+	// Update dispatchTime field
+	updated := saved.DeepCopy()
+	updated.Status.DispatchTime = &now
 	g.Expect(c.Update(context.TODO(), updated)).NotTo(gomega.HaveOccurred())
 
-	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(gomega.HaveOccurred())
-	g.Expect(fetched).To(gomega.Equal(updated))
+	// Get updated event
+	g.Expect(c.Get(context.TODO(), key, saved)).NotTo(gomega.HaveOccurred())
+	g.Expect(saved).To(gomega.Equal(updated))
 
-	// Test Delete
-	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
-	g.Expect(c.Get(context.TODO(), key, fetched)).To(gomega.HaveOccurred())
+	// Delete event
+	g.Expect(c.Delete(context.TODO(), saved)).NotTo(gomega.HaveOccurred())
+
+	// Confirm event deletion
+	g.Expect(c.Get(context.TODO(), key, saved)).To(gomega.HaveOccurred())
 }
 
 func TestTypeValidation(t *testing.T) {
@@ -74,12 +81,12 @@ func TestTypeValidation(t *testing.T) {
 		t     string
 		valid bool
 	}{
-		{"foo-bar_baz.", true},
+		{"eventreactor.event-type_validation", true},
 		{strings.Repeat("n", 1), true},
 		{strings.Repeat("n", 63), true},
-		{"", false},
 		{strings.Repeat("n", 64), false},
-		{"foo/bar/baz", false},
+		{"", false},
+		{"event/type/validation", false},
 	}
 
 	g := gomega.NewGomegaWithT(t)
@@ -93,7 +100,7 @@ func TestTypeValidation(t *testing.T) {
 			},
 			Spec: EventSpec{
 				Type:        test.t,
-				Source:      "/eventreactor/apis/v1alpha1/events",
+				Source:      "/eventreactor/test/type-validation",
 				ID:          "4f6e2a13-592a-4c39-b4e4-b7194f4a4318",
 				Time:        &now,
 				ContentType: "application/json",
@@ -115,7 +122,7 @@ func TestSourceValidation(t *testing.T) {
 		source string
 		valid  bool
 	}{
-		{"/eventreactor/test", true},
+		{"/eventreactor/test/source-validation", true},
 		{"/", true},
 		{"", false},
 	}
@@ -169,7 +176,7 @@ func TestIDValidation(t *testing.T) {
 			},
 			Spec: EventSpec{
 				Type:        "eventreactor.test",
-				Source:      "/eventreactor/apis/v1alpha1/events",
+				Source:      "/eventreactor/test/id-validation",
 				ID:          test.id,
 				Time:        &now,
 				ContentType: "application/json",
