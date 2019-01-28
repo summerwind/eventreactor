@@ -29,7 +29,6 @@ spec:
                 event:
                   properties:
                     sourcePattern:
-                      minLength: 1
                       type: string
                     type:
                       maxLength: 63
@@ -47,6 +46,9 @@ spec:
                     selector:
                       type: object
                     status:
+                      enum:
+                      - success
+                      - failure
                       type: string
                   type: object
               type: object

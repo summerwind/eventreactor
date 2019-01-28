@@ -21,44 +21,57 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// PipelineTriggerEvent defines the condition of the event to execute pipeline.
 type PipelineTriggerEvent struct {
+	// Type specifies the type of event.
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=63
 	// +kubebuilder:validation:Pattern=^[a-z0-9A-Z\-_.]+$
 	Type string `json:"type"`
 
-	// +kubebuilder:validation:MinLength=1
+	// SourcePattern specifies a regular expression pattern
+	// that matches the source field of event.
 	SourcePattern string `json:"sourcePattern"`
 }
 
+// PipelineTriggerPipeline defines the condition of the pipeline to execute
+// pipeline.
 type PipelineTriggerPipeline struct {
-	Name     string               `json:"name,omitempty"`
+	// Name specifies the name of pipeline.
+	Name string `json:"name,omitempty"`
+
+	// Selector is a selector which must be true for the labels of pipeline.
 	Selector metav1.LabelSelector `json:"selector,omitempty"`
-	Status   string               `json:"status,omitempty"`
+
+	// Status specifies the status of pipeline. If the value is empty,
+	// it matches both success and failure.
+	// +kubebuilder:validation:Enum=success,failure
+	Status string `json:"status,omitempty"`
 }
 
+// PipelineTrigger defines the cause of pipeline execution.
 type PipelineTrigger struct {
-	Event    *PipelineTriggerEvent    `json:"event,omitempty"`
+	// Event contains the condition of the event to execute pipeline.
+	Event *PipelineTriggerEvent `json:"event,omitempty"`
+	// Pipeline contains the condition of the pipeline to execute pipeline.
 	Pipeline *PipelineTriggerPipeline `json:"pipeline,omitempty"`
 }
 
-// PipelineSpec defines the desired state of Pipeline
+// PipelineSpec defines the desired state of Pipeline.
 type PipelineSpec struct {
 	buildv1alpha1.BuildSpec
 
+	// Trigger specifies the trigger of the Pipeline.
 	Trigger PipelineTrigger `json:"trigger"`
 }
 
-// PipelineStatus defines the observed state of Pipeline
-type PipelineStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-}
+// PipelineStatus defines the observed state of Pipeline.
+type PipelineStatus struct{}
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Pipeline is the Schema for the pipelines API
+// Pipeline is the Schema for the pipelines API.
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
 type Pipeline struct {
@@ -71,7 +84,7 @@ type Pipeline struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// PipelineList contains a list of Pipeline
+// PipelineList contains a list of Pipeline.
 type PipelineList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

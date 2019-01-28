@@ -27,51 +27,93 @@ const (
 	CompletionStatusFailure = "failure"
 )
 
+// ActionSpecEvent defines the event information of Action.
+// For actions triggered by other actions, this information is copied
+// from the original action.
 type ActionSpecEvent struct {
-	Name   string `json:"name"`
-	Type   string `json:"type"`
+	// Name is the name of event.
+	Name string `json:"name"`
+
+	// Source is the type of event.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=63
+	// +kubebuilder:validation:Pattern=^[a-z0-9A-Z\-_.]+$
+	Type string `json:"type"`
+
+	// Source is the source of event.
 	Source string `json:"source"`
 }
 
+// ActionSpecPipeline defines the pipeline information of Action.
 type ActionSpecPipeline struct {
-	Name       string `json:"name"`
-	Generation int64  `json:"generation"`
+	// Name is the name of pipeline.
+	Name string `json:"name"`
+
+	// Generation is the resource generation of pipeline resource.
+	Generation int64 `json:"generation"`
 }
 
-type ActionSpecTransaction struct {
-	ID    string `json:"id"`
-	Stage int    `json:"stage"`
-}
-
+// ActionSpecUpstream defines the upstream information of Action.
 type ActionSpecUpstream struct {
-	Name     string   `json:"name"`
-	Status   string   `json:"status"`
-	Pipeline string   `json:"pipeline"`
-	Via      []string `json:"via,omitempty"`
+	// Name specifies the name of upstream action.
+	Name string `json:"name"`
+
+	// Status specifies the status of upstream action.
+	// +kubebuilder:validation:Enum=success,failure
+	Status string `json:"status"`
+
+	// Pipeline is the pipeline name of upstream action.
+	Pipeline string `json:"pipeline"`
+
+	// Via is a list of upstream action names.
+	// +kubebuilder:validation:MaxItems=10
+	Via []string `json:"via,omitempty"`
 }
 
-// ActionSpec defines the desired state of Action
+// ActionSpecTransaction defines the transaction information of Action.
+// If this action triggered another action, this information is also
+// carried over to the next action.
+type ActionSpecTransaction struct {
+	// ID is a unique string used as the identifier of the transaction.
+	ID string `json:"id"`
+
+	// Stage specifies the number of actions in the transaction.
+	Stage int `json:"stage"`
+}
+
+// ActionSpec defines the desired state of Action.
 type ActionSpec struct {
 	buildv1alpha1.BuildSpec
 
-	Event       ActionSpecEvent       `json:"event"`
-	Pipeline    ActionSpecPipeline    `json:"pipeline"`
-	Upstream    ActionSpecUpstream    `json:"upstream"`
+	// Event contains information of the event.
+	Event ActionSpecEvent `json:"event"`
+
+	// Pipeline contains information of the pipeline.
+	Pipeline ActionSpecPipeline `json:"pipeline"`
+
+	// Upstream contains information of the action that triggered pipeline.
+	Upstream ActionSpecUpstream `json:"upstream"`
+
+	// Transaction is shared information carried over between actions.
 	Transaction ActionSpecTransaction `json:"transaction"`
 }
 
-// ActionStatus defines the observed state of Action
+// ActionStatus defines the observed state of Action.
 type ActionStatus struct {
 	buildv1alpha1.BuildStatus
 
-	StepLogs     []string     `json:"stepLogs,omitempty"`
+	// StepLogs contains the output log for each step.
+	StepLogs []string `json:"stepLogs,omitempty"`
+
+	// DispatchTime specifies the time when this action executed
+	// another pipeline by controller.
 	DispatchTime *metav1.Time `json:"dispatchTime,omitempty"`
 }
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Action is the Schema for the actions API
+// Action is the Schema for the actions API.
 // +k8s:openapi-gen=true
 type Action struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -81,21 +123,25 @@ type Action struct {
 	Status ActionStatus `json:"status,omitempty"`
 }
 
+// IsCompleted returns true when the action is completed.
 func (a Action) IsCompleted() bool {
 	cond := a.Status.GetCondition(buildv1alpha1.BuildSucceeded)
 	return (cond != nil && cond.Status != corev1.ConditionUnknown)
 }
 
+// IsSucceeded returns true when the action is succeeded.
 func (a Action) IsSucceeded() bool {
 	cond := a.Status.GetCondition(buildv1alpha1.BuildSucceeded)
 	return (cond != nil && cond.Status == corev1.ConditionTrue)
 }
 
+// IsFailed returns true when the action is failed.
 func (a Action) IsFailed() bool {
 	cond := a.Status.GetCondition(buildv1alpha1.BuildSucceeded)
 	return (cond != nil && cond.Status == corev1.ConditionFalse)
 }
 
+// CompletionStatus returns "success" or "failure" based on the state of Action.
 func (a Action) CompletionStatus() string {
 	status := ""
 
@@ -116,7 +162,7 @@ func (a Action) CompletionStatus() string {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ActionList contains a list of Action
+// ActionList contains a list of Action.
 type ActionList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

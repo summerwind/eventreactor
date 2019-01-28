@@ -20,37 +20,47 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EventSpec defines the desired state of Event
+// EventSpec defines the desired state of Event.
 type EventSpec struct {
+	// SpecVersion specifies the spec version of CloudEvents.
 	// +kubebuilder:validation:Enum=0.2
 	SpecVersion string `json:"specVersion"`
 
+	// Type specifies the type of CloudEvents.
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=63
 	// +kubebuilder:validation:Pattern=^[a-z0-9A-Z\-_.]+$
 	Type string `json:"type"`
 
-	// +kubebuilder:validation:MinLength=1
+	// Source specifies the source of CloudEvents.
 	Source string `json:"source"`
 
-	// +kubebuilder:validation:MinLength=1
+	// ID specifies the unique ID of CloudEvents.
 	ID string `json:"id"`
 
-	Time        *metav1.Time `json:"time,omitempty"`
-	SchemaURL   string       `json:"schemeURL,omitempty"`
-	ContentType string       `json:"contentType,omitempty"`
-	Data        string       `json:"data,omitempty"`
+	// Time specifies the time of CloudEvents.
+	Time *metav1.Time `json:"time,omitempty"`
+
+	// SchemaURL specifies the schema URL of CloudEvents.
+	SchemaURL string `json:"schemaURL,omitempty"`
+
+	// ContentType specifies the type of data.
+	ContentType string `json:"contentType,omitempty"`
+
+	// Data specifies the event payload.
+	Data string `json:"data,omitempty"`
 }
 
-// EventStatus defines the observed state of Event
+// EventStatus defines the observed state of Event.
 type EventStatus struct {
+	// DispatchTime specifies the time of handled the event by ontroller.
 	DispatchTime *metav1.Time `json:"dispatchTime,omitempty"`
 }
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Event is the Schema for the events API
+// Event is the Schema for the events API.
 // +k8s:openapi-gen=true
 type Event struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -62,7 +72,7 @@ type Event struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// EventList contains a list of Event
+// EventList contains a list of Event.
 type EventList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

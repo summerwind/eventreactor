@@ -27,12 +27,10 @@ spec:
             data:
               type: string
             id:
-              minLength: 1
               type: string
-            schemeURL:
+            schemaURL:
               type: string
             source:
-              minLength: 1
               type: string
             specVersion:
               enum:

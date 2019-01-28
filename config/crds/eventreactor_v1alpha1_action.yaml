@@ -29,6 +29,9 @@ spec:
                 source:
                   type: string
                 type:
+                  maxLength: 63
+                  minLength: 1
+                  pattern: ^[a-z0-9A-Z\-_.]+$
                   type: string
               required:
               - name
@@ -64,10 +67,14 @@ spec:
                 pipeline:
                   type: string
                 status:
+                  enum:
+                  - success
+                  - failure
                   type: string
                 via:
                   items:
                     type: string
+                  maxItems: 10
                   type: array
               required:
               - name
