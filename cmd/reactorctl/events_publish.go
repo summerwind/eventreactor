@@ -66,7 +66,6 @@ func eventsPublishRun(cmd *cobra.Command, args []string) error {
 		es.Source = s
 		es.Data = d
 		es.ContentType = ct
-		es.SpecVersion = "0.2"
 	} else {
 		event := &v1alpha1.Event{}
 		key := types.NamespacedName{

@@ -66,7 +66,6 @@ func parseBinaryContent(r *http.Request, event *v1alpha1.Event) error {
 	}
 
 	event.Spec = v1alpha1.EventSpec{
-		SpecVersion: r.Header.Get("CE-SpecVersion"),
 		Type:        r.Header.Get("CE-Type"),
 		Source:      r.Header.Get("CE-Source"),
 		ID:          r.Header.Get("CE-ID"),
@@ -100,7 +99,6 @@ func parseStructuredContent(r *http.Request, event *v1alpha1.Event) error {
 	fmt.Println(ce)
 
 	event.Spec = v1alpha1.EventSpec{
-		SpecVersion: ce.SpecVersion,
 		Type:        ce.Type,
 		Source:      ce.Source,
 		ID:          ce.ID,

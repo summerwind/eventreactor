@@ -15,20 +15,30 @@ spec:
     openAPIV3Schema:
       properties:
         apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
           type: string
         kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
         spec:
           properties:
             event:
+              description: Event contains information of the event.
               properties:
                 name:
+                  description: Name is the name of event.
                   type: string
                 source:
+                  description: Source is the source of event.
                   type: string
                 type:
+                  description: Source is the type of event.
                   maxLength: 63
                   minLength: 1
                   pattern: ^[a-z0-9A-Z\-_.]+$
@@ -39,21 +49,29 @@ spec:
               - source
               type: object
             pipeline:
+              description: Pipeline contains information of the pipeline.
               properties:
                 generation:
+                  description: Generation is the resource generation of pipeline resource.
                   format: int64
                   type: integer
                 name:
+                  description: Name is the name of pipeline.
                   type: string
               required:
               - name
               - generation
               type: object
             transaction:
+              description: Transaction is shared information carried over between
+                actions.
               properties:
                 id:
+                  description: ID is a unique string used as the identifier of the
+                    transaction.
                   type: string
                 stage:
+                  description: Stage specifies the number of actions in the transaction.
                   format: int64
                   type: integer
               required:
@@ -61,17 +79,20 @@ spec:
               - stage
               type: object
             upstream:
+              description: Upstream contains information of the action that triggered
+                pipeline.
               properties:
                 name:
+                  description: Name specifies the name of upstream action.
                   type: string
                 pipeline:
+                  description: Pipeline is the pipeline name of upstream action.
                   type: string
                 status:
-                  enum:
-                  - success
-                  - failure
+                  description: Status specifies the status of upstream action.
                   type: string
                 via:
+                  description: Via is a list of upstream action names.
                   items:
                     type: string
                   maxItems: 10
@@ -90,9 +111,12 @@ spec:
         status:
           properties:
             dispatchTime:
+              description: DispatchTime specifies the time when this action executed
+                another pipeline by controller.
               format: date-time
               type: string
             stepLogs:
+              description: StepLogs contains the output log for each step.
               items:
                 type: string
               type: array

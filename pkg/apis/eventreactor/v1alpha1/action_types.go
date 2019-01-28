@@ -59,7 +59,6 @@ type ActionSpecUpstream struct {
 	Name string `json:"name"`
 
 	// Status specifies the status of upstream action.
-	// +kubebuilder:validation:Enum=success,failure
 	Status string `json:"status"`
 
 	// Pipeline is the pipeline name of upstream action.

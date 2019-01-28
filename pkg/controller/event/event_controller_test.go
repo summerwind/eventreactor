@@ -17,7 +17,6 @@ limitations under the License.
 package event
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -38,6 +37,7 @@ const timeout = time.Second * 5
 
 func TestReconcile(t *testing.T) {
 	now := metav1.Now()
+
 	instance := &v1alpha1.Event{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
@@ -45,7 +45,7 @@ func TestReconcile(t *testing.T) {
 		},
 		Spec: v1alpha1.EventSpec{
 			Type:   "io.github.summerwind.eventreactor.test",
-			Source: "/eventreactor/test/*",
+			Source: "/eventreactor/test",
 			ID:     "f378179e-7d49-4078-84ce-e529de6dfdca",
 			Time:   &now,
 		},
@@ -63,15 +63,10 @@ func TestReconcile(t *testing.T) {
 			Trigger: v1alpha1.PipelineTrigger{
 				Event: &v1alpha1.PipelineTriggerEvent{
 					Type:          "io.github.summerwind.eventreactor.test",
-					SourcePattern: "/eventreactor/test/*",
+					SourcePattern: "/eventreactor/.*",
 				},
 			},
 		},
-	}
-
-	actionKey := types.NamespacedName{
-		Name:      fmt.Sprintf("%s-%s", instance.Name, pipeline.Name),
-		Namespace: "default",
 	}
 
 	expected := reconcile.Request{
@@ -117,9 +112,20 @@ func TestReconcile(t *testing.T) {
 
 	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expected)))
 
-	action := &v1alpha1.Action{}
-	g.Expect(c.Get(context.TODO(), actionKey, action)).To(gomega.Succeed())
+	actionList := &v1alpha1.ActionList{}
+
+	labels := map[string]string{
+		v1alpha1.KeyEventName:    instance.Name,
+		v1alpha1.KeyPipelineName: pipeline.Name,
+	}
+
+	opts := &client.ListOptions{Namespace: instance.Namespace}
+	opts = opts.MatchingLabels(labels)
+
+	g.Expect(c.List(context.TODO(), opts, actionList)).To(gomega.Succeed())
+	g.Expect(len(actionList.Items)).To(gomega.Equal(1))
 
 	// Manually delete Deployment since GC isn't enabled in the test control plane
-	g.Expect(c.Delete(context.TODO(), action)).To(gomega.Succeed())
+	action := actionList.Items[0]
+	g.Expect(c.Delete(context.TODO(), &action)).To(gomega.Succeed())
 }

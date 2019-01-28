@@ -39,7 +39,6 @@ func TestStorageEvent(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: EventSpec{
-			SpecVersion: "0.2",
 			Type:        "eventreactor.test",
 			Source:      "/eventreactor/apis/v1alpha1/events",
 			ID:          "4f6e2a13-592a-4c39-b4e4-b7194f4a4318",
@@ -70,45 +69,6 @@ func TestStorageEvent(t *testing.T) {
 	g.Expect(c.Get(context.TODO(), key, fetched)).To(gomega.HaveOccurred())
 }
 
-func TestSpecVersionValidation(t *testing.T) {
-	var tests = []struct {
-		specVersion string
-		valid       bool
-	}{
-		{"0.2", true},
-		{"0.1", false},
-		{"1.0", false},
-	}
-
-	g := gomega.NewGomegaWithT(t)
-
-	for i, test := range tests {
-		now := metav1.Now()
-		ev := &Event{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("spec-version-validation-%02d", i),
-				Namespace: "default",
-			},
-			Spec: EventSpec{
-				SpecVersion: test.specVersion,
-				Type:        "eventreactor.test",
-				Source:      "/eventreactor/apis/v1alpha1/events",
-				ID:          "4f6e2a13-592a-4c39-b4e4-b7194f4a4318",
-				Time:        &now,
-				ContentType: "application/json",
-				Data:        "{\"test\":true}",
-			},
-		}
-
-		err := c.Create(context.TODO(), ev)
-		if test.valid {
-			g.Expect(err).NotTo(gomega.HaveOccurred())
-		} else {
-			g.Expect(err).To(gomega.HaveOccurred())
-		}
-	}
-}
-
 func TestTypeValidation(t *testing.T) {
 	var tests = []struct {
 		t     string
@@ -132,7 +92,6 @@ func TestTypeValidation(t *testing.T) {
 				Namespace: "default",
 			},
 			Spec: EventSpec{
-				SpecVersion: "0.2",
 				Type:        test.t,
 				Source:      "/eventreactor/apis/v1alpha1/events",
 				ID:          "4f6e2a13-592a-4c39-b4e4-b7194f4a4318",
@@ -171,7 +130,6 @@ func TestSourceValidation(t *testing.T) {
 				Namespace: "default",
 			},
 			Spec: EventSpec{
-				SpecVersion: "0.2",
 				Type:        "eventreactor.test",
 				Source:      test.source,
 				ID:          "4f6e2a13-592a-4c39-b4e4-b7194f4a4318",
@@ -210,7 +168,6 @@ func TestIDValidation(t *testing.T) {
 				Namespace: "default",
 			},
 			Spec: EventSpec{
-				SpecVersion: "0.2",
 				Type:        "eventreactor.test",
 				Source:      "/eventreactor/apis/v1alpha1/events",
 				ID:          test.id,

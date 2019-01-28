@@ -22,10 +22,6 @@ import (
 
 // EventSpec defines the desired state of Event.
 type EventSpec struct {
-	// SpecVersion specifies the spec version of CloudEvents.
-	// +kubebuilder:validation:Enum=0.2
-	SpecVersion string `json:"specVersion"`
-
 	// Type specifies the type of CloudEvents.
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=63
@@ -33,9 +29,11 @@ type EventSpec struct {
 	Type string `json:"type"`
 
 	// Source specifies the source of CloudEvents.
+	// +kubebuilder:validation:MinLength=1
 	Source string `json:"source"`
 
 	// ID specifies the unique ID of CloudEvents.
+	// +kubebuilder:validation:MinLength=1
 	ID string `json:"id"`
 
 	// Time specifies the time of CloudEvents.

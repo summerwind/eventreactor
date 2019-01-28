@@ -48,7 +48,9 @@ func TestStorageAction(t *testing.T) {
 				},
 			},
 			Event: ActionSpecEvent{
-				Name: "7yjzp0t5g15329yr37n5q0qdh3",
+				Name:   "7yjzp0t5g15329yr37n5q0qdh3",
+				Type:   "eventreactor.test",
+				Source: "/eventreactor/test",
 			},
 			Pipeline: ActionSpecPipeline{
 				Name:       "foo",
