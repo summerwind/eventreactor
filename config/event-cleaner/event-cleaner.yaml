@@ -50,7 +50,7 @@ metadata:
   labels:
     app: eventreactor
 spec:
-  schedule: "*/30 * * * *"
+  schedule: "30 0 * * *"
   jobTemplate:
     spec:
       template:
