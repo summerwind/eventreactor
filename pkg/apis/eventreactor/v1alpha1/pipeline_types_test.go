@@ -30,13 +30,9 @@ import (
 )
 
 func TestStoragePipeline(t *testing.T) {
-	key := types.NamespacedName{
-		Name:      "foo",
-		Namespace: "default",
-	}
-	created := &Pipeline{
+	pipeline := &Pipeline{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo",
+			Name:      "test",
 			Namespace: "default",
 		},
 		Spec: PipelineSpec{
@@ -52,32 +48,43 @@ func TestStoragePipeline(t *testing.T) {
 
 			Trigger: PipelineTrigger{
 				Event: &PipelineTriggerEvent{
-					Type:          "io.github.summerwind.eventreactor.test",
-					SourcePattern: "/eventreactor/test/hello",
+					Type:          "eventreactor.test",
+					SourcePattern: "/eventreactor/test/storage-pipeline",
 				},
 			},
 		},
 	}
+
 	g := gomega.NewGomegaWithT(t)
 
-	// Test Create
-	fetched := &Pipeline{}
-	g.Expect(c.Create(context.TODO(), created)).NotTo(gomega.HaveOccurred())
+	// Create new pipeline
+	g.Expect(c.Create(context.TODO(), pipeline)).NotTo(gomega.HaveOccurred())
 
-	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(gomega.HaveOccurred())
-	g.Expect(fetched).To(gomega.Equal(created))
+	// Get pipeline
+	key := types.NamespacedName{
+		Name:      pipeline.Name,
+		Namespace: pipeline.Namespace,
+	}
+	saved := &Pipeline{}
+	g.Expect(c.Get(context.TODO(), key, saved)).NotTo(gomega.HaveOccurred())
+	g.Expect(saved).To(gomega.Equal(pipeline))
 
-	// Test Updating the Labels
-	updated := fetched.DeepCopy()
-	updated.Labels = map[string]string{"hello": "world"}
+	// Update labels
+	updated := saved.DeepCopy()
+	updated.Labels = map[string]string{
+		KeyEventType: updated.Spec.Trigger.Event.Type,
+	}
 	g.Expect(c.Update(context.TODO(), updated)).NotTo(gomega.HaveOccurred())
 
-	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(gomega.HaveOccurred())
-	g.Expect(fetched).To(gomega.Equal(updated))
+	// Get updated pipeline
+	g.Expect(c.Get(context.TODO(), key, saved)).NotTo(gomega.HaveOccurred())
+	g.Expect(saved).To(gomega.Equal(updated))
 
-	// Test Delete
-	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
-	g.Expect(c.Get(context.TODO(), key, fetched)).To(gomega.HaveOccurred())
+	// Delete pipeline
+	g.Expect(c.Delete(context.TODO(), saved)).NotTo(gomega.HaveOccurred())
+
+	// Confirm pipeline deletion
+	g.Expect(c.Get(context.TODO(), key, saved)).To(gomega.HaveOccurred())
 }
 
 func TestEventTriggerTypeValidation(t *testing.T) {
@@ -85,12 +92,12 @@ func TestEventTriggerTypeValidation(t *testing.T) {
 		t     string
 		valid bool
 	}{
-		{"foo-bar_baz.", true},
+		{"eventreactor.pipleine-type_validation", true},
 		{strings.Repeat("n", 1), true},
 		{strings.Repeat("n", 63), true},
-		{"", false},
 		{strings.Repeat("n", 64), false},
-		{"foo/bar/baz", false},
+		{"", false},
+		{"pipeline/type/validation", false},
 	}
 
 	g := gomega.NewGomegaWithT(t)
@@ -115,7 +122,55 @@ func TestEventTriggerTypeValidation(t *testing.T) {
 				Trigger: PipelineTrigger{
 					Event: &PipelineTriggerEvent{
 						Type:          test.t,
-						SourcePattern: "/eventreactor/test/hello",
+						SourcePattern: "/eventreactor/test/.*",
+					},
+				},
+			},
+		}
+
+		err := c.Create(context.TODO(), pipeline)
+		if test.valid {
+			g.Expect(err).NotTo(gomega.HaveOccurred())
+		} else {
+			g.Expect(err).To(gomega.HaveOccurred())
+		}
+	}
+}
+
+func TestPipelineTriggerStatusValidation(t *testing.T) {
+	var tests = []struct {
+		status string
+		valid  bool
+	}{
+		{"success", true},
+		{"failure", true},
+		{"", true},
+		{"invalid", false},
+	}
+
+	g := gomega.NewGomegaWithT(t)
+
+	for i, test := range tests {
+		pipeline := &Pipeline{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("trigger-status-validation-%02d", i),
+				Namespace: "default",
+			},
+			Spec: PipelineSpec{
+				BuildSpec: buildv1alpha1.BuildSpec{
+					Steps: []corev1.Container{
+						corev1.Container{
+							Name:  "hello",
+							Image: "ubuntu:18.04",
+							Args:  []string{"echo", "hello world"},
+						},
+					},
+				},
+
+				Trigger: PipelineTrigger{
+					Pipeline: &PipelineTriggerPipeline{
+						Name:   "test",
+						Status: test.status,
 					},
 				},
 			},
