@@ -17,9 +17,12 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/knative/build/pkg/apis/build/v1alpha1"
 	buildv1alpha1 "github.com/knative/build/pkg/apis/build/v1alpha1"
+	duckv1alpha1 "github.com/knative/pkg/apis/duck/v1alpha1"
 	"github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	corev1 "k8s.io/api/core/v1"
@@ -28,13 +31,11 @@ import (
 )
 
 func TestStorageAction(t *testing.T) {
-	key := types.NamespacedName{
-		Name:      "7yjzp0t5g15329yr37n5q0qdh3-foo",
-		Namespace: "default",
-	}
-	created := &Action{
+	now := metav1.Now()
+
+	action := &Action{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "7yjzp0t5g15329yr37n5q0qdh3-foo",
+			Name:      "01d25bsbhcwhx228s89wmhz37y",
 			Namespace: "default",
 		},
 		Spec: ActionSpec{
@@ -48,34 +49,227 @@ func TestStorageAction(t *testing.T) {
 				},
 			},
 			Event: ActionSpecEvent{
-				Name:   "7yjzp0t5g15329yr37n5q0qdh3",
+				Name:   "01d29k85cza07ae9taqzbwc1d4",
 				Type:   "eventreactor.test",
-				Source: "/eventreactor/test",
+				Source: "/eventreactor/test/storage-action",
 			},
 			Pipeline: ActionSpecPipeline{
-				Name:       "foo",
+				Name:       "test",
 				Generation: 1,
+			},
+			Transaction: ActionSpecTransaction{
+				ID:    "01d2927bszc2yn394z6khwr1p8",
+				Stage: 1,
 			},
 		},
 	}
+
 	g := gomega.NewGomegaWithT(t)
 
-	// Test Create
-	fetched := &Action{}
-	g.Expect(c.Create(context.TODO(), created)).NotTo(gomega.HaveOccurred())
+	// Create new action
+	g.Expect(c.Create(context.TODO(), action)).NotTo(gomega.HaveOccurred())
 
-	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(gomega.HaveOccurred())
-	g.Expect(fetched).To(gomega.Equal(created))
+	// Get action
+	key := types.NamespacedName{
+		Name:      action.Name,
+		Namespace: action.Namespace,
+	}
+	saved := &Action{}
+	g.Expect(c.Get(context.TODO(), key, saved)).NotTo(gomega.HaveOccurred())
+	g.Expect(saved).To(gomega.Equal(action))
 
-	// Test Updating the Labels
-	updated := fetched.DeepCopy()
-	updated.Labels = map[string]string{"hello": "world"}
+	// Update dispatchTime field
+	updated := saved.DeepCopy()
+	updated.Status.DispatchTime = &now
 	g.Expect(c.Update(context.TODO(), updated)).NotTo(gomega.HaveOccurred())
 
-	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(gomega.HaveOccurred())
-	g.Expect(fetched).To(gomega.Equal(updated))
+	// Get updated action
+	g.Expect(c.Get(context.TODO(), key, saved)).NotTo(gomega.HaveOccurred())
+	g.Expect(saved).To(gomega.Equal(updated))
 
-	// Test Delete
-	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
-	g.Expect(c.Get(context.TODO(), key, fetched)).To(gomega.HaveOccurred())
+	// Delete action
+	g.Expect(c.Delete(context.TODO(), saved)).NotTo(gomega.HaveOccurred())
+
+	// Confirm action deletion
+	g.Expect(c.Get(context.TODO(), key, saved)).To(gomega.HaveOccurred())
+}
+
+func TestIsCompleted(t *testing.T) {
+	successCond := &duckv1alpha1.Condition{
+		Type:    v1alpha1.BuildSucceeded,
+		Status:  corev1.ConditionTrue,
+		Message: "Success",
+	}
+	failureCond := &duckv1alpha1.Condition{
+		Type:    v1alpha1.BuildSucceeded,
+		Status:  corev1.ConditionFalse,
+		Message: "Failure",
+	}
+	unknownCond := &duckv1alpha1.Condition{
+		Type:    v1alpha1.BuildSucceeded,
+		Status:  corev1.ConditionUnknown,
+		Message: "Unknown",
+	}
+
+	var tests = []struct {
+		cond  *duckv1alpha1.Condition
+		valid bool
+	}{
+		{successCond, true},
+		{failureCond, true},
+		{unknownCond, false},
+		{nil, false},
+	}
+
+	g := gomega.NewGomegaWithT(t)
+
+	for i, test := range tests {
+		action := &Action{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("is-completed-%02d", i),
+				Namespace: "default",
+			},
+			Status: ActionStatus{
+				BuildStatus: buildv1alpha1.BuildStatus{},
+			},
+		}
+
+		action.Status.BuildStatus.SetCondition(test.cond)
+		g.Expect(action.IsCompleted()).To(gomega.Equal(test.valid))
+	}
+}
+
+func TestIsSucceeded(t *testing.T) {
+	successCond := &duckv1alpha1.Condition{
+		Type:    v1alpha1.BuildSucceeded,
+		Status:  corev1.ConditionTrue,
+		Message: "Success",
+	}
+	failureCond := &duckv1alpha1.Condition{
+		Type:    v1alpha1.BuildSucceeded,
+		Status:  corev1.ConditionFalse,
+		Message: "Failure",
+	}
+	unknownCond := &duckv1alpha1.Condition{
+		Type:    v1alpha1.BuildSucceeded,
+		Status:  corev1.ConditionUnknown,
+		Message: "Unknown",
+	}
+
+	var tests = []struct {
+		cond  *duckv1alpha1.Condition
+		valid bool
+	}{
+		{successCond, true},
+		{failureCond, false},
+		{unknownCond, false},
+		{nil, false},
+	}
+
+	g := gomega.NewGomegaWithT(t)
+
+	for i, test := range tests {
+		action := &Action{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("is-succeeded-%02d", i),
+				Namespace: "default",
+			},
+			Status: ActionStatus{
+				BuildStatus: buildv1alpha1.BuildStatus{},
+			},
+		}
+
+		action.Status.BuildStatus.SetCondition(test.cond)
+		g.Expect(action.IsSucceeded()).To(gomega.Equal(test.valid))
+	}
+}
+
+func TestIsFailed(t *testing.T) {
+	successCond := &duckv1alpha1.Condition{
+		Type:    v1alpha1.BuildSucceeded,
+		Status:  corev1.ConditionTrue,
+		Message: "Success",
+	}
+	failureCond := &duckv1alpha1.Condition{
+		Type:    v1alpha1.BuildSucceeded,
+		Status:  corev1.ConditionFalse,
+		Message: "Failure",
+	}
+	unknownCond := &duckv1alpha1.Condition{
+		Type:    v1alpha1.BuildSucceeded,
+		Status:  corev1.ConditionUnknown,
+		Message: "Unknown",
+	}
+
+	var tests = []struct {
+		cond  *duckv1alpha1.Condition
+		valid bool
+	}{
+		{successCond, false},
+		{failureCond, true},
+		{unknownCond, false},
+		{nil, false},
+	}
+
+	g := gomega.NewGomegaWithT(t)
+
+	for i, test := range tests {
+		action := &Action{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("is-failed-%02d", i),
+				Namespace: "default",
+			},
+			Status: ActionStatus{
+				BuildStatus: buildv1alpha1.BuildStatus{},
+			},
+		}
+
+		action.Status.BuildStatus.SetCondition(test.cond)
+		g.Expect(action.IsFailed()).To(gomega.Equal(test.valid))
+	}
+}
+
+func TestCompletionStatus(t *testing.T) {
+	successCond := &duckv1alpha1.Condition{
+		Type:    v1alpha1.BuildSucceeded,
+		Status:  corev1.ConditionTrue,
+		Message: "Success",
+	}
+	failureCond := &duckv1alpha1.Condition{
+		Type:    v1alpha1.BuildSucceeded,
+		Status:  corev1.ConditionFalse,
+		Message: "Failure",
+	}
+	unknownCond := &duckv1alpha1.Condition{
+		Type:    v1alpha1.BuildSucceeded,
+		Status:  corev1.ConditionUnknown,
+		Message: "Unknown",
+	}
+
+	var tests = []struct {
+		cond   *duckv1alpha1.Condition
+		status string
+	}{
+		{successCond, "success"},
+		{failureCond, "failure"},
+		{unknownCond, ""},
+		{nil, ""},
+	}
+
+	g := gomega.NewGomegaWithT(t)
+
+	for i, test := range tests {
+		action := &Action{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("completion-status-%02d", i),
+				Namespace: "default",
+			},
+			Status: ActionStatus{
+				BuildStatus: buildv1alpha1.BuildStatus{},
+			},
+		}
+
+		action.Status.BuildStatus.SetCondition(test.cond)
+		g.Expect(action.CompletionStatus()).To(gomega.Equal(test.status))
+	}
 }
