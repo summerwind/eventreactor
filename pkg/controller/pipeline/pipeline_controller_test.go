@@ -17,13 +17,14 @@ limitations under the License.
 package pipeline
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/onsi/gomega"
 	v1alpha1 "github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
 	"golang.org/x/net/context"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,32 +37,35 @@ var c client.Client
 const timeout = time.Second * 5
 
 func TestReconcile(t *testing.T) {
-	instance := &v1alpha1.Pipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "default",
-		},
-		Spec: v1alpha1.PipelineSpec{
-			Trigger: v1alpha1.PipelineTrigger{
-				Event: &v1alpha1.PipelineTriggerEvent{
-					Type:          "io.github.summerwind.eventreactor.test",
-					SourcePattern: "/eventreactor/test/controller",
-				},
-			},
+	eventTrigger := v1alpha1.PipelineTrigger{
+		Event: &v1alpha1.PipelineTriggerEvent{
+			Type:          "eventreactor.test",
+			SourcePattern: "/eventreactor/test/reconcile",
 		},
 	}
 
-	expected := reconcile.Request{
-		NamespacedName: types.NamespacedName{
-			Name:      "test",
-			Namespace: "default",
+	pipelineTrigger := v1alpha1.PipelineTrigger{
+		Pipeline: &v1alpha1.PipelineTriggerPipeline{
+			Name: "test-trigger",
 		},
+	}
+
+	emptyTrigger := v1alpha1.PipelineTrigger{}
+
+	var tests = []struct {
+		trigger          v1alpha1.PipelineTrigger
+		labelTriggerType string
+		labelEventType   string
+	}{
+		{eventTrigger, v1alpha1.TriggerTypeEvent, eventTrigger.Event.Type},
+		{pipelineTrigger, v1alpha1.TriggerTypePipeline, ""},
+		{emptyTrigger, "", ""},
 	}
 
 	g := gomega.NewGomegaWithT(t)
 
-	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
-	// channel when it is finished.
+	// Setup the Manager and Controller.  Wrap the Controller Reconcile function
+	// so it writes each request to a channel when it is finished.
 	mgr, err := manager.New(cfg, manager.Options{})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	c = mgr.GetClient()
@@ -76,22 +80,45 @@ func TestReconcile(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
-	// Create the Pipeline object and expect the Reconcile and Deployment to be created.
-	err = c.Create(context.TODO(), instance)
-	// The instance object may not be a valid object because it might be missing some required fields.
-	// Please modify the instance object by adding required fields and then remove the following if statement.
-	if apierrors.IsInvalid(err) {
-		t.Logf("failed to create object, got an invalid object error: %v", err)
-		return
+	for i, test := range tests {
+		instance := &v1alpha1.Pipeline{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("test-%02d", i),
+				Namespace: "default",
+			},
+			Spec: v1alpha1.PipelineSpec{
+				Trigger: test.trigger,
+			},
+		}
+
+		expected := reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      instance.Name,
+				Namespace: instance.Namespace,
+			},
+		}
+
+		// Create the Pipeline object and expect the Reconcile and Deployment to be created.
+		err = c.Create(context.TODO(), instance)
+		if errors.IsInvalid(err) {
+			t.Logf("failed to create object, got an invalid object error: %v", err)
+			return
+		}
+		g.Expect(err).NotTo(gomega.HaveOccurred())
+
+		// Wait for reconcile request
+		g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expected)))
+
+		// Get pipeline
+		pipeline := &v1alpha1.Pipeline{}
+		g.Expect(c.Get(context.TODO(), expected.NamespacedName, pipeline)).To(gomega.Succeed())
+
+		// Test the label value of pipeline
+		labels := pipeline.ObjectMeta.Labels
+		g.Expect(labels[v1alpha1.KeyPipelineTrigger]).To(gomega.Equal(test.labelTriggerType))
+		g.Expect(labels[v1alpha1.KeyEventType]).To(gomega.Equal(test.labelEventType))
+
+		// Delete pipeline
+		g.Expect(c.Delete(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
 	}
-	g.Expect(err).NotTo(gomega.HaveOccurred())
-	defer c.Delete(context.TODO(), instance)
-
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expected)))
-
-	pipeline := &v1alpha1.Pipeline{}
-	g.Expect(c.Get(context.TODO(), expected.NamespacedName, pipeline)).To(gomega.Succeed())
-
-	eventType := instance.Spec.Trigger.Event.Type
-	g.Expect(pipeline.ObjectMeta.Labels[v1alpha1.KeyEventType]).To(gomega.Equal(eventType))
 }
