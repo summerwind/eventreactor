@@ -41,7 +41,6 @@ import (
 
 	"github.com/go-logr/logr"
 	buildv1alpha1 "github.com/knative/build/pkg/apis/build/v1alpha1"
-	buildscheme "github.com/knative/build/pkg/client/clientset/versioned/scheme"
 	"github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -71,9 +70,6 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
-	// Setup Scheme for knative build resources
-	buildscheme.AddToScheme(mgr.GetScheme())
-
 	// Create a new controller
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: r})
 	if err != nil {
