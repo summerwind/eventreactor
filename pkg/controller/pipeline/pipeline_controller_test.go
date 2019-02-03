@@ -24,7 +24,6 @@ import (
 	"github.com/onsi/gomega"
 	v1alpha1 "github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
 	"golang.org/x/net/context"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -98,13 +97,8 @@ func TestReconcile(t *testing.T) {
 			},
 		}
 
-		// Create the Pipeline object and expect the Reconcile and Deployment to be created.
-		err = c.Create(context.TODO(), instance)
-		if errors.IsInvalid(err) {
-			t.Logf("failed to create object, got an invalid object error: %v", err)
-			return
-		}
-		g.Expect(err).NotTo(gomega.HaveOccurred())
+		// Create pipeline
+		g.Expect(c.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
 
 		// Wait for reconcile request
 		g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expected)))
