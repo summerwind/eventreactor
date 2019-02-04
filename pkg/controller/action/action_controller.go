@@ -17,8 +17,10 @@ limitations under the License.
 package action
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"reflect"
 	"strings"
@@ -50,6 +52,10 @@ const (
 	ControllerName = "action-controller"
 	UpstreamLimit  = 10
 )
+
+// logReader is a dummy reader for testing purpose.
+// If this variable set to non-nil, pod log will be read from this reader.
+var logReader *bytes.Reader
 
 // Add creates a new Action Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -276,12 +282,21 @@ func (r *ReconcileAction) newBuild(action *v1alpha1.Action) *buildv1alpha1.Build
 }
 
 func (r *ReconcileAction) getStepLog(namespace, podName, containerName string) (string, error) {
-	opts := &corev1.PodLogOptions{Container: containerName}
-	req := r.api.CoreV1().Pods(namespace).GetLogs(podName, opts)
+	var (
+		readCloser io.ReadCloser
+		err        error
+	)
 
-	readCloser, err := req.Timeout(5 * time.Minute).Stream()
-	if err != nil {
-		return "", err
+	if logReader == nil {
+		opts := &corev1.PodLogOptions{Container: containerName}
+		req := r.api.CoreV1().Pods(namespace).GetLogs(podName, opts)
+
+		readCloser, err = req.Timeout(5 * time.Minute).Stream()
+		if err != nil {
+			return "", err
+		}
+	} else {
+		readCloser = ioutil.NopCloser(logReader)
 	}
 	defer readCloser.Close()
 
