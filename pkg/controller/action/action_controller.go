@@ -17,7 +17,6 @@ limitations under the License.
 package action
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -51,11 +50,12 @@ import (
 const (
 	ControllerName = "action-controller"
 	UpstreamLimit  = 10
+	LogSizeLimit   = 65536
 )
 
 // logReader is a dummy reader for testing purpose.
 // If this variable set to non-nil, pod log will be read from this reader.
-var logReader *bytes.Reader
+var logReader io.ReadCloser
 
 // Add creates a new Action Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -296,7 +296,7 @@ func (r *ReconcileAction) getStepLog(namespace, podName, containerName string) (
 			return "", err
 		}
 	} else {
-		readCloser = ioutil.NopCloser(logReader)
+		readCloser = logReader
 	}
 	defer readCloser.Close()
 
@@ -306,8 +306,8 @@ func (r *ReconcileAction) getStepLog(namespace, podName, containerName string) (
 	}
 
 	// Limit the maximum size to 64 KiB
-	if len(b) > 65536 {
-		start := len(b) - 65536
+	if len(b) > LogSizeLimit {
+		start := len(b) - LogSizeLimit
 		b = b[start:]
 	}
 
