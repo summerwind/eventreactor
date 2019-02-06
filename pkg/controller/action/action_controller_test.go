@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"strings"
 	"testing"
 	"time"
 
@@ -178,6 +179,69 @@ func TestReconcile(t *testing.T) {
 
 	// Manually delete build since GC isn't enabled in the test control plane
 	g.Expect(c.Delete(context.TODO(), build)).To(gomega.Succeed())
+}
+
+func TestNewBuild(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	mgr, err := manager.New(cfg, manager.Options{})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+
+	r := newReconciler(mgr).(*ReconcileAction)
+
+	action1 := newTestAction("01d25bsbhcwhx228s89wmhz37y")
+	action1.Spec.Upstream = v1alpha1.ActionSpecUpstream{
+		Name:     "01d25c3gdjedrky8jw529j3wq7",
+		Status:   "success",
+		Pipeline: "test",
+		Via:      []string{"test"},
+	}
+
+	build1 := r.newBuild(action1)
+	for i, step := range build1.Spec.Steps {
+		g.Expect(step.Name).To(gomega.Equal(action1.Spec.BuildSpec.Steps[i].Name))
+		g.Expect(step.Image).To(gomega.Equal(action1.Spec.BuildSpec.Steps[i].Image))
+
+		g.Expect(len(step.Env)).To(gomega.Equal(8))
+		g.Expect(step.Env[0].Name).To(gomega.Equal("ER_EVENT_NAME"))
+		g.Expect(step.Env[0].Value).To(gomega.Equal(action1.Spec.Event.Name))
+		g.Expect(step.Env[1].Name).To(gomega.Equal("ER_EVENT_TYPE"))
+		g.Expect(step.Env[1].Value).To(gomega.Equal(action1.Spec.Event.Type))
+		g.Expect(step.Env[2].Name).To(gomega.Equal("ER_EVENT_SOURCE"))
+		g.Expect(step.Env[2].Value).To(gomega.Equal(action1.Spec.Event.Source))
+		g.Expect(step.Env[3].Name).To(gomega.Equal("ER_PIPELINE_NAME"))
+		g.Expect(step.Env[3].Value).To(gomega.Equal(action1.Spec.Pipeline.Name))
+		g.Expect(step.Env[4].Name).To(gomega.Equal("ER_UPSTREAM_NAME"))
+		g.Expect(step.Env[4].Value).To(gomega.Equal(action1.Spec.Upstream.Name))
+		g.Expect(step.Env[5].Name).To(gomega.Equal("ER_UPSTREAM_STATUS"))
+		g.Expect(step.Env[5].Value).To(gomega.Equal(action1.Spec.Upstream.Status))
+		g.Expect(step.Env[6].Name).To(gomega.Equal("ER_UPSTREAM_PIPELINE"))
+		g.Expect(step.Env[6].Value).To(gomega.Equal(action1.Spec.Upstream.Pipeline))
+		g.Expect(step.Env[7].Name).To(gomega.Equal("ER_UPSTREAM_VIA"))
+		g.Expect(step.Env[7].Value).To(gomega.Equal(strings.Join(action1.Spec.Upstream.Via, ",")))
+	}
+
+	action2 := newTestAction("01d25c3gdjedrky8jw529j3wq7")
+	action2.Spec.BuildSpec.Steps = []corev1.Container{}
+	action2.Spec.BuildSpec.Template = &buildv1alpha1.TemplateInstantiationSpec{
+		Name: "test",
+		Kind: buildv1alpha1.BuildTemplateKind,
+	}
+
+	build2 := r.newBuild(action2)
+	g.Expect(build2.Spec.Template.Name).To(gomega.Equal(action2.Spec.BuildSpec.Template.Name))
+	g.Expect(build2.Spec.Template.Kind).To(gomega.Equal(action2.Spec.BuildSpec.Template.Kind))
+
+	env := build2.Spec.Template.Env
+	g.Expect(len(env)).To(gomega.Equal(4))
+	g.Expect(env[0].Name).To(gomega.Equal("ER_EVENT_NAME"))
+	g.Expect(env[0].Value).To(gomega.Equal(action1.Spec.Event.Name))
+	g.Expect(env[1].Name).To(gomega.Equal("ER_EVENT_TYPE"))
+	g.Expect(env[1].Value).To(gomega.Equal(action1.Spec.Event.Type))
+	g.Expect(env[2].Name).To(gomega.Equal("ER_EVENT_SOURCE"))
+	g.Expect(env[2].Value).To(gomega.Equal(action1.Spec.Event.Source))
+	g.Expect(env[3].Name).To(gomega.Equal("ER_PIPELINE_NAME"))
+	g.Expect(env[3].Value).To(gomega.Equal(action1.Spec.Pipeline.Name))
 }
 
 func TestGetStepLog(t *testing.T) {
