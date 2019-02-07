@@ -111,6 +111,37 @@ func newTestBuildStatus(action *v1alpha1.Action) buildv1alpha1.BuildStatus {
 	return status
 }
 
+func newTestPipeline(name string) *v1alpha1.Pipeline {
+	return &v1alpha1.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: "default",
+			Labels: map[string]string{
+				v1alpha1.KeyPipelineTrigger: v1alpha1.TriggerTypeEvent,
+				v1alpha1.KeyEventType:       "eventreactor.test",
+				"pipeline":                  "yes",
+			},
+		},
+		Spec: v1alpha1.PipelineSpec{
+			BuildSpec: buildv1alpha1.BuildSpec{
+				Steps: []corev1.Container{
+					corev1.Container{
+						Name:  "hello",
+						Image: "ubuntu:18.04",
+						Args:  []string{"echo", "hello world"},
+					},
+				},
+			},
+			Trigger: v1alpha1.PipelineTrigger{
+				Event: &v1alpha1.PipelineTriggerEvent{
+					Type:          "eventreactor.test",
+					SourcePattern: "/eventreactor/test",
+				},
+			},
+		},
+	}
+}
+
 func TestReconcile(t *testing.T) {
 	instance := newTestAction("01d25c3gdjedrky8jw529j3wq7")
 
@@ -280,4 +311,140 @@ func TestGetStepLog(t *testing.T) {
 		g.Expect(len(log)).To(gomega.Equal(test.logLen))
 		g.Expect(log[len(log)-10:]).To(gomega.Equal(str[len(str)-10:]))
 	}
+}
+
+func TestStartPipelines(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	mgr, err := manager.New(cfg, manager.Options{})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+	c = mgr.GetClient()
+
+	recFn, requests := SetupTestReconcile(newReconciler(mgr))
+	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
+
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
+
+	action := newTestAction("01d25bsbhcwhx228s89wmhz37y")
+	action.Status.BuildStatus = newTestBuildStatus(action)
+	action.Status.BuildStatus.SetCondition(&duckv1alpha1.Condition{
+		Type:   buildv1alpha1.BuildSucceeded,
+		Status: corev1.ConditionTrue,
+	})
+
+	expected := reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      action.Name,
+			Namespace: action.Namespace,
+		},
+	}
+
+	// Trigger itself
+	p1 := newTestPipeline("valid")
+	p1.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger] = v1alpha1.TriggerTypePipeline
+	p1.Spec.Trigger.Pipeline = &v1alpha1.PipelineTriggerPipeline{
+		Name: action.Spec.Pipeline.Name,
+	}
+
+	// Trigger itself
+	p2 := newTestPipeline(action.Spec.Pipeline.Name)
+	p2.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger] = v1alpha1.TriggerTypePipeline
+
+	// No trigger
+	p3 := newTestPipeline("no-trigger")
+	p3.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger] = v1alpha1.TriggerTypePipeline
+	p3.Spec.Trigger.Event = nil
+
+	// Name does not match
+	p4 := newTestPipeline("name-mismatch")
+	p4.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger] = v1alpha1.TriggerTypePipeline
+	p4.Spec.Trigger.Event = nil
+	p4.Spec.Trigger.Pipeline = &v1alpha1.PipelineTriggerPipeline{
+		Name: "name-mismatch",
+	}
+
+	// Status does not match
+	p5 := newTestPipeline("status-mismatch")
+	p5.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger] = v1alpha1.TriggerTypePipeline
+	p5.Spec.Trigger.Event = nil
+	p5.Spec.Trigger.Pipeline = &v1alpha1.PipelineTriggerPipeline{
+		Status: "failure",
+	}
+
+	// Status does not match
+	p6 := newTestPipeline("selector-mismatch")
+	p6.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger] = v1alpha1.TriggerTypePipeline
+	p6.Spec.Trigger.Event = nil
+	p6.Spec.Trigger.Pipeline = &v1alpha1.PipelineTriggerPipeline{
+		Selector: metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"test": "yes",
+			},
+		},
+	}
+
+	// Create pipelines
+	g.Expect(c.Create(context.TODO(), p1)).NotTo(gomega.HaveOccurred())
+	defer c.Delete(context.TODO(), p1)
+	g.Expect(c.Create(context.TODO(), p2)).NotTo(gomega.HaveOccurred())
+	defer c.Delete(context.TODO(), p2)
+	g.Expect(c.Create(context.TODO(), p3)).NotTo(gomega.HaveOccurred())
+	defer c.Delete(context.TODO(), p3)
+	g.Expect(c.Create(context.TODO(), p4)).NotTo(gomega.HaveOccurred())
+	defer c.Delete(context.TODO(), p4)
+	g.Expect(c.Create(context.TODO(), p5)).NotTo(gomega.HaveOccurred())
+	defer c.Delete(context.TODO(), p5)
+	g.Expect(c.Create(context.TODO(), p6)).NotTo(gomega.HaveOccurred())
+	defer c.Delete(context.TODO(), p6)
+
+	// Create action
+	g.Expect(c.Create(context.TODO(), action)).NotTo(gomega.HaveOccurred())
+	defer c.Delete(context.TODO(), action)
+
+	// Wait for reconcile request by Action creation
+	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expected)))
+
+	actionList := &v1alpha1.ActionList{}
+	opts := &client.ListOptions{Namespace: action.Namespace}
+	g.Expect(c.List(context.TODO(), opts, actionList)).NotTo(gomega.HaveOccurred())
+
+	g.Expect(len(actionList.Items)).To(gomega.Equal(2))
+	g.Expect(actionList.Items[1].Spec.Pipeline.Name).To(gomega.Equal(p1.Name))
+}
+
+func TestNewAction(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+
+	mgr, err := manager.New(cfg, manager.Options{})
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+
+	r := newReconciler(mgr).(*ReconcileAction)
+
+	action := newTestAction("01d25bsbhcwhx228s89wmhz37y")
+	pipeline := newTestPipeline("test-new-action")
+
+	a := r.newAction(action, pipeline)
+	labels := a.ObjectMeta.Labels
+
+	g.Expect(labels[v1alpha1.KeyEventName]).To(gomega.Equal(action.Spec.Event.Name))
+	g.Expect(labels[v1alpha1.KeyPipelineName]).To(gomega.Equal(pipeline.Name))
+	g.Expect(labels[v1alpha1.KeyTransactionID]).To(gomega.Equal(action.Spec.Transaction.ID))
+	g.Expect(labels["pipeline"]).To(gomega.Equal("yes"))
+
+	g.Expect(a.Spec.BuildSpec).To(gomega.Equal(pipeline.Spec.BuildSpec))
+	g.Expect(a.Spec.Event).To(gomega.Equal(action.Spec.Event))
+	g.Expect(a.Spec.Pipeline.Name).To(gomega.Equal(pipeline.Name))
+	g.Expect(a.Spec.Pipeline.Generation).To(gomega.Equal(pipeline.Generation))
+	g.Expect(a.Spec.Transaction.ID).To(gomega.Equal(action.Spec.Transaction.ID))
+	g.Expect(a.Spec.Transaction.Stage).To(gomega.Equal(action.Spec.Transaction.Stage + 1))
+	g.Expect(a.Spec.Upstream.Name).To(gomega.Equal(action.Name))
+	g.Expect(a.Spec.Upstream.Status).To(gomega.Equal(action.CompletionStatus()))
+	g.Expect(a.Spec.Upstream.Pipeline).To(gomega.Equal(action.Spec.Pipeline.Name))
+	g.Expect(len(a.Spec.Upstream.Via)).To(gomega.Equal(1))
+	g.Expect(a.Spec.Upstream.Via[0]).To(gomega.Equal(action.Spec.Pipeline.Name))
 }

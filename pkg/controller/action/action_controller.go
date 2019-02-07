@@ -388,8 +388,6 @@ func (r *ReconcileAction) startPipelines(action *v1alpha1.Action) error {
 }
 
 func (r *ReconcileAction) newAction(action *v1alpha1.Action, pipeline *v1alpha1.Pipeline) *v1alpha1.Action {
-	name := v1alpha1.NewID()
-
 	labels := map[string]string{
 		v1alpha1.KeyEventName:     action.Spec.Event.Name,
 		v1alpha1.KeyPipelineName:  pipeline.Name,
@@ -407,20 +405,17 @@ func (r *ReconcileAction) newAction(action *v1alpha1.Action, pipeline *v1alpha1.
 	via = append(via, action.Spec.Pipeline.Name)
 
 	buildSpec := pipeline.Spec.BuildSpec.DeepCopy()
+	event := action.Spec.Event.DeepCopy()
 
 	newAction := &v1alpha1.Action{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
+			Name:      v1alpha1.NewID(),
 			Namespace: pipeline.Namespace,
 			Labels:    labels,
 		},
 		Spec: v1alpha1.ActionSpec{
 			BuildSpec: *buildSpec,
-			Event: v1alpha1.ActionSpecEvent{
-				Name:   action.Spec.Event.Name,
-				Type:   action.Spec.Event.Type,
-				Source: action.Spec.Event.Source,
-			},
+			Event:     *event,
 			Pipeline: v1alpha1.ActionSpecPipeline{
 				Name:       pipeline.Name,
 				Generation: pipeline.Generation,
