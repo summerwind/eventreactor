@@ -330,57 +330,63 @@ func TestStartPipelines(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
-	action := newTestAction("01d25bsbhcwhx228s89wmhz37y")
-	action.Status.BuildStatus = newTestBuildStatus(action)
-	action.Status.BuildStatus.SetCondition(&duckv1alpha1.Condition{
-		Type:   buildv1alpha1.BuildSucceeded,
-		Status: corev1.ConditionTrue,
-	})
+	a1 := newTestAction("01d25bsbhcwhx228s89wmhz37y")
+	a1.Spec.Pipeline.Name = "test1"
 
-	expected := reconcile.Request{
-		NamespacedName: types.NamespacedName{
-			Name:      action.Name,
-			Namespace: action.Namespace,
-		},
+	a2 := newTestAction("01d25c3gdjedrky8jw529j3wq7")
+	a2.Spec.Pipeline.Name = "test2"
+	a2.Spec.Transaction.Stage = 10
+	a2.Spec.Upstream = v1alpha1.ActionSpecUpstream{
+		Name:     "test",
+		Status:   "success",
+		Pipeline: "test",
+		Via:      []string{"1", "2", "3", "4", "5", "6", "7", "8", "test"},
 	}
 
-	// Trigger itself
-	p1 := newTestPipeline("valid")
+	// Valid for a1
+	p1 := newTestPipeline("valid1")
 	p1.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger] = v1alpha1.TriggerTypePipeline
 	p1.Spec.Trigger.Pipeline = &v1alpha1.PipelineTriggerPipeline{
-		Name: action.Spec.Pipeline.Name,
+		Name: a1.Spec.Pipeline.Name,
+	}
+
+	// Valid for a2
+	p2 := newTestPipeline("valid2")
+	p2.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger] = v1alpha1.TriggerTypePipeline
+	p2.Spec.Trigger.Pipeline = &v1alpha1.PipelineTriggerPipeline{
+		Name: a2.Spec.Pipeline.Name,
 	}
 
 	// Trigger itself
-	p2 := newTestPipeline(action.Spec.Pipeline.Name)
-	p2.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger] = v1alpha1.TriggerTypePipeline
+	p3 := newTestPipeline(a1.Spec.Pipeline.Name)
+	p3.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger] = v1alpha1.TriggerTypePipeline
 
 	// No trigger
-	p3 := newTestPipeline("no-trigger")
-	p3.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger] = v1alpha1.TriggerTypePipeline
-	p3.Spec.Trigger.Event = nil
-
-	// Name does not match
-	p4 := newTestPipeline("name-mismatch")
+	p4 := newTestPipeline("no-trigger")
 	p4.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger] = v1alpha1.TriggerTypePipeline
 	p4.Spec.Trigger.Event = nil
-	p4.Spec.Trigger.Pipeline = &v1alpha1.PipelineTriggerPipeline{
+
+	// Name does not match
+	p5 := newTestPipeline("name-mismatch")
+	p5.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger] = v1alpha1.TriggerTypePipeline
+	p5.Spec.Trigger.Event = nil
+	p5.Spec.Trigger.Pipeline = &v1alpha1.PipelineTriggerPipeline{
 		Name: "name-mismatch",
 	}
 
 	// Status does not match
-	p5 := newTestPipeline("status-mismatch")
-	p5.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger] = v1alpha1.TriggerTypePipeline
-	p5.Spec.Trigger.Event = nil
-	p5.Spec.Trigger.Pipeline = &v1alpha1.PipelineTriggerPipeline{
+	p6 := newTestPipeline("status-mismatch")
+	p6.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger] = v1alpha1.TriggerTypePipeline
+	p6.Spec.Trigger.Event = nil
+	p6.Spec.Trigger.Pipeline = &v1alpha1.PipelineTriggerPipeline{
 		Status: "failure",
 	}
 
 	// Status does not match
-	p6 := newTestPipeline("selector-mismatch")
-	p6.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger] = v1alpha1.TriggerTypePipeline
-	p6.Spec.Trigger.Event = nil
-	p6.Spec.Trigger.Pipeline = &v1alpha1.PipelineTriggerPipeline{
+	p7 := newTestPipeline("selector-mismatch")
+	p7.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger] = v1alpha1.TriggerTypePipeline
+	p7.Spec.Trigger.Event = nil
+	p7.Spec.Trigger.Pipeline = &v1alpha1.PipelineTriggerPipeline{
 		Selector: metav1.LabelSelector{
 			MatchLabels: map[string]string{
 				"test": "yes",
@@ -401,20 +407,54 @@ func TestStartPipelines(t *testing.T) {
 	defer c.Delete(context.TODO(), p5)
 	g.Expect(c.Create(context.TODO(), p6)).NotTo(gomega.HaveOccurred())
 	defer c.Delete(context.TODO(), p6)
+	g.Expect(c.Create(context.TODO(), p7)).NotTo(gomega.HaveOccurred())
+	defer c.Delete(context.TODO(), p7)
 
-	// Create action
-	g.Expect(c.Create(context.TODO(), action)).NotTo(gomega.HaveOccurred())
-	defer c.Delete(context.TODO(), action)
+	var tests = []struct {
+		action   *v1alpha1.Action
+		pipeline *v1alpha1.Pipeline
+		len      int
+	}{
+		{a1, p1, 2},
+		{a2, nil, 1},
+	}
 
-	// Wait for reconcile request by Action creation
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expected)))
+	for _, test := range tests {
+		test.action.Status.BuildStatus = newTestBuildStatus(test.action)
+		test.action.Status.BuildStatus.SetCondition(&duckv1alpha1.Condition{
+			Type:   buildv1alpha1.BuildSucceeded,
+			Status: corev1.ConditionTrue,
+		})
 
-	actionList := &v1alpha1.ActionList{}
-	opts := &client.ListOptions{Namespace: action.Namespace}
-	g.Expect(c.List(context.TODO(), opts, actionList)).NotTo(gomega.HaveOccurred())
+		req := reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      test.action.Name,
+				Namespace: test.action.Namespace,
+			},
+		}
 
-	g.Expect(len(actionList.Items)).To(gomega.Equal(2))
-	g.Expect(actionList.Items[1].Spec.Pipeline.Name).To(gomega.Equal(p1.Name))
+		// Create action
+		g.Expect(c.Create(context.TODO(), test.action)).NotTo(gomega.HaveOccurred())
+		defer c.Delete(context.TODO(), test.action)
+
+		// Wait for reconcile request by Action creation
+		g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(req)))
+
+		// Get actions
+		actionList := &v1alpha1.ActionList{}
+		opts := &client.ListOptions{Namespace: test.action.Namespace}
+		g.Expect(c.List(context.TODO(), opts, actionList)).NotTo(gomega.HaveOccurred())
+
+		fmt.Println(test, actionList.Items)
+		g.Expect(len(actionList.Items)).To(gomega.Equal(test.len))
+		if test.len > 1 {
+			g.Expect(actionList.Items[1].Spec.Pipeline.Name).To(gomega.Equal(test.pipeline.Name))
+		}
+
+		for _, a := range actionList.Items {
+			g.Expect(c.Delete(context.TODO(), &a)).To(gomega.Succeed())
+		}
+	}
 }
 
 func TestNewAction(t *testing.T) {

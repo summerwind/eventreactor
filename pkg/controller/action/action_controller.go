@@ -18,6 +18,7 @@ package action
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -25,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -48,10 +49,12 @@ import (
 )
 
 const (
-	ControllerName = "action-controller"
-	UpstreamLimit  = 10
-	LogSizeLimit   = 65536
+	ControllerName   = "action-controller"
+	MaxUpstreamLimit = 9
+	LogSizeLimit     = 65536
 )
+
+var errUpstreamLimitExceeded = errors.New("upstream limit exceeded")
 
 // logReader is a dummy reader for testing purpose.
 // If this variable set to non-nil, pod log will be read from this reader.
@@ -122,7 +125,7 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 	instance := &v1alpha1.Action{}
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
 			// For additional cleanup logic use finalizers.
 			return reconcile.Result{}, nil
@@ -137,12 +140,12 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 
 	// Start another pipelines
 	if instance.IsCompleted() {
-		if len(instance.Spec.Upstream.Via) < UpstreamLimit {
-			err := r.startPipelines(instance)
-			if err != nil {
+		err := r.startPipelines(instance)
+		if err != nil {
+			if err != errUpstreamLimitExceeded {
 				return reconcile.Result{}, err
 			}
-		} else {
+
 			r.log.Info("Exceeded the upstream limit", "namespace", instance.Namespace, "name", instance.Name)
 			r.recorder.Event(instance, "Warning", "UpstreamLimitExceeded", "Exceeded the upstream limit.")
 		}
@@ -169,7 +172,7 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 
 	err = r.Get(context.TODO(), request.NamespacedName, build)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			err = r.Create(context.TODO(), build)
 			if err != nil {
 				return reconcile.Result{}, err
@@ -315,6 +318,10 @@ func (r *ReconcileAction) getStepLog(namespace, podName, containerName string) (
 }
 
 func (r *ReconcileAction) startPipelines(action *v1alpha1.Action) error {
+	if len(action.Spec.Upstream.Via) >= MaxUpstreamLimit {
+		return errUpstreamLimitExceeded
+	}
+
 	pipelineLabels := map[string]string{
 		v1alpha1.KeyPipelineTrigger: v1alpha1.TriggerTypePipeline,
 	}
@@ -370,7 +377,7 @@ func (r *ReconcileAction) startPipelines(action *v1alpha1.Action) error {
 
 		err = r.Get(context.TODO(), naKey, na)
 		if err != nil {
-			if errors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				err = r.Create(context.TODO(), na)
 				if err != nil {
 					return err
