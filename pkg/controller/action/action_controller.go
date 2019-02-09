@@ -160,7 +160,7 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 			return reconcile.Result{}, err
 		}
 
-		r.log.Info("Dispatched", "namespace", action.Namespace, "name", action.Name)
+		r.log.Info("Dispatched", "namespace", instance.Namespace, "name", instance.Name)
 		r.recorder.Event(instance, "Normal", "Dispatched", "Successfully dispatched")
 	}
 
@@ -178,7 +178,7 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 				return reconcile.Result{}, err
 			}
 
-			r.log.Info("Created build", "namespace", build.Namespace, "name", build.Name)
+			r.log.Info("Created build", "namespace", instance.Namespace, "name", instance.Name)
 			r.recorder.Event(instance, "Normal", "Created", fmt.Sprintf("Created build %s/%s", build.Namespace, build.Name))
 
 			return reconcile.Result{}, nil
@@ -201,7 +201,7 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 
 				stepLog, err := r.getStepLog(build.Status.Cluster.Namespace, build.Status.Cluster.PodName, stepName)
 				if err != nil {
-					r.log.Error(err, "Failed to read the step log", "build", build.Name, "step", stepName)
+					r.log.Error(err, "Failed to read the step log", "namespace", instance.Namespace, "name", instance.Name, "step", stepName)
 					r.recorder.Event(instance, "Warning", "FailedReadLog", fmt.Sprintf("Failed to read the step \"%s\" log", stepName))
 					continue
 				}
@@ -215,8 +215,12 @@ func (r *ReconcileAction) Reconcile(request reconcile.Request) (reconcile.Result
 			return reconcile.Result{}, err
 		}
 
-		r.log.Info("Synced state with build", "namespace", build.Namespace, "name", build.Name)
-		r.recorder.Event(instance, "Normal", "Synced", fmt.Sprintf("Synced state with build %s/%s", build.Namespace, action.Name))
+		r.log.Info("Synced", "namespace", action.Namespace, "name", action.Name)
+
+		if action.IsCompleted() {
+			r.log.Info("Completed", "namespace", instance.Namespace, "name", instance.Name)
+			r.recorder.Event(instance, "Normal", "Completed", fmt.Sprintf("Completed with build %s/%s", build.Namespace, build.Name))
+		}
 	}
 
 	return reconcile.Result{}, nil
@@ -383,8 +387,8 @@ func (r *ReconcileAction) startPipelines(action *v1alpha1.Action) error {
 					return err
 				}
 
-				r.log.Info("Triggered next action", "namespace", na.Namespace, "name", na.Name)
-				r.recorder.Event(action, "Normal", "Triggered", fmt.Sprintf("Triggered next action %s/%s", na.Namespace, na.Name))
+				r.log.Info("Triggered next pipeline", "namespace", action.Namespace, "name", action.Name, "pipeline", pipeline.Name)
+				r.recorder.Event(action, "Normal", "Triggered", fmt.Sprintf("Triggered next pipeline %s/%s", pipeline.Namespace, pipeline.Name))
 			} else if err != nil {
 				return err
 			}
