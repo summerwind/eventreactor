@@ -146,10 +146,10 @@ func run(cmd *cobra.Command, args []string) error {
 
 func main() {
 	logf.SetLogger(logf.ZapLogger(false))
-	log = logf.Log.WithName("event-cleaner")
+	log = logf.Log.WithName("resource-cleaner")
 
 	var cmd = &cobra.Command{
-		Use:   "event-cleaner",
+		Use:   "resource-cleaner",
 		Short: "The garbage collector for Event Reactor",
 		RunE:  run,
 
