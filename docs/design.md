@@ -26,5 +26,5 @@ Event Reactor uses the following Kubernetes custom resource.
 
 - **Controller** manages the state of custom resources. When a Event resource is created, controller reads Pipeline resources and creates Actions based on the content of Pipeline. It runs on their own namespace and manages custom resources in the all namespaces.
 - **Event Receiver** receives [CloudEvents](https://cloudevents.io/) formatted event from external event sources and creates Event resource. It runs on any namespace and manages Event resources in the same namespace.
-- **Resource CLeander** deletes expired Event and Action resource. It will prevent Kubernetes resources from becoming bloated. Resource Cleaner runs as a regular job on any namespace and removes the resources in the same namespace.
+- **Resource Cleaner** deletes expired Event and Action resource. It will prevent Kubernetes resources from becoming bloated. Resource Cleaner runs as a regular job on any namespace and removes the resources in the same namespace.
 - **reactorctl** is a command-line tools for managing Event Reactor's resouces. Users can use this to check the details of Event and the execution result of Action.
