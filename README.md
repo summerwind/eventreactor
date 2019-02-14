@@ -9,5 +9,10 @@ Event Reactor is developed to deal with the following use cases:
 - Run unit test when pushed to Git repository.
 - Build container image when a tag is created in the Git repository.
 - Create a GitHub issue when received alert from monitoring system.
-- Create a Pull Request to update Dockerfile when updated base image.
+- Create a Pull Request to update Dockerfile when it's base image is updated.
 
+## Documentation
+
+Follow the links below to learn more about Event Reactor.
+
+- [Design Overview](docs/design.md)
