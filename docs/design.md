@@ -1,6 +1,6 @@
 # Design Overview
 
-Event Reactor is an event-driven container runnter. This runs any containers as a reaction of the event. The user can specify which container to run for which event. Event Reactor is similar to [GitHub Actions](https://github.com/features/actions) but works on any Kubernetes cluster.
+Event Reactor is an event-driven container runner. This runs any containers as a reaction of the event. The user can specify which container to run for which event. Event Reactor is similar to [GitHub Actions](https://github.com/features/actions) but works on any Kubernetes cluster.
 
 ## Concept
 
@@ -26,5 +26,25 @@ Event Reactor uses the following Kubernetes custom resource.
 
 - **Controller** manages the state of custom resources. When a Event resource is created, controller reads Pipeline resources and creates Actions based on the content of Pipeline. It runs on their own namespace and manages custom resources in the all namespaces.
 - **Event Receiver** receives [CloudEvents](https://cloudevents.io/) formatted event from external event sources and creates Event resource. It runs on any namespace and manages Event resources in the same namespace.
-- **Resource Cleaner** deletes expired Event and Action resource. It will prevent Kubernetes resources from becoming bloated. Resource Cleaner runs as a regular job on any namespace and removes the resources in the same namespace.
-- **reactorctl** is a command-line tools for managing Event Reactor's resouces. Users can use this to check the details of Event and the execution result of Action.
+- **Resource Cleaner** deletes expired Event and Action resource. It will prevent Kubernetes resources from becoming bloated. Resource Cleaner runs as a job on any namespace and removes the resources in the same namespace.
+- **reactorctl** is a command-line tool for managing Event Reactor's resouces. Users can use this to check the details of Event and the execution result of Action.
+
+## Workflow
+
+The basic workflow of running containers with Event Reactor is as follows.
+
+![Workflow](images/workflow.png)
+
+1. User creates a pipeline resource that defines which event to run and how to run the container.
+2. When *Event Receiver* receives an event from the event source, it creates an Event resource.
+3. *Controller* watches the Event resource and starts execution of the pipeline.
+4. *Controller* reads the Pipeline resource and determines the pipeline to be run corresponding to the Event.
+5. *Controller* creates an Action resource based on the content of the Pipeline resource.
+6. *Controller* creates an Build resource based on the content of the Action resource.
+7. *Knative Build Controller* watches the creation of the Build resource and starts creating Pod.
+8. *Knative Build Controller* creates a Pod resource based on the content of the Build resource.
+9. *Knative Build Controller* watches the status update of Pod resources.
+10. *Knative Build Controller* updates the status of the Build resource when Pod is completed.
+11. *Controller* watches the status update of Build resources.
+12. *Controller* updates the status of the Action resource when Build is updated.
+13. User checks the result of the Action and reads their logs.
