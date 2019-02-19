@@ -1,0 +1,75 @@
+apiVersion: eventreactor.summerwind.github.io/v1alpha1
+kind: Pipeline
+metadata:
+  name: eventreactor-slack
+spec:
+  trigger:
+    pipeline:
+      selector:
+        matchLabels:
+          notification: slack
+  steps:
+  - name: message
+    image: summerwind/toolbox:latest
+    command: ["consul-template"]
+    args: ["-template", "/config/message.json.tpl:message.json", "-once"]
+    volumeMounts:
+    - name: config-volume
+      mountPath: /config
+  - name: slack
+    image: summerwind/slack:latest
+    env:
+    - name: SLACK_WEBHOOK_URL
+      valueFrom:
+        secretKeyRef:
+          name: eventreactor-slack-secret
+          key: slack_webhook_url
+  volumes:
+  - name: config-volume
+    configMap:
+      name: eventreactor-slack-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eventreactor-slack-config
+data:
+  message.json.tpl: |
+    {
+      "attachments": [
+        {
+          "color": "{{ if eq (env "ER_UPSTREAM_STATUS") "success" }}good{{ else }}danger{{ end }}",
+          "text": "Pipeline completed.",
+          "fields": [
+            {
+              "title": "Pipeline",
+              "value": "{{ env "ER_UPSTREAM_PIPELINE" }}",
+              "short": true
+            },
+            {
+              "title": "Status",
+              "value": "{{ env "ER_UPSTREAM_STATUS" }}",
+              "short": true
+            },
+            {
+              "title": "Action",
+              "value": "{{ env "ER_UPSTREAM_NAME" }}",
+              "short": false
+            },
+            {
+              "title": "Event Type",
+              "value": "{{ env "ER_EVENT_TYPE" }}",
+              "short": false
+            }
+          ]
+        }
+      ]
+    }
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: eventreactor-slack-secret
+type: Opaque
+data:
+  slack_webhook_url: "set your incoming webhook URL"

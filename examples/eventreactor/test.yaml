@@ -1,0 +1,35 @@
+apiVersion: eventreactor.summerwind.github.io/v1alpha1
+kind: Pipeline
+metadata:
+  name: eventreactor-test
+  labels:
+    notification: slack
+spec:
+  trigger:
+    event:
+      type: com.github.push
+      sourcePattern: summerwind/eventreactor/git/refs/heads/master
+  sources:
+  - name: git
+    targetPath: go/src/github.com/summerwind/eventreactor
+    git:
+      url: https://github.com/summerwind/eventreactor.git
+      revision: master
+  steps:
+  - name: vendor
+    image: summerwind/kubebuilder:latest
+    env:
+    - name: GOPATH
+      value: /workspace/go
+    workingDir: "/workspace/go/src/github.com/summerwind/eventreactor"
+    command: ["dep"]
+    args: ["ensure", "-v"]
+  - name: test
+    image: summerwind/kubebuilder:latest
+    env:
+    - name: GOPATH
+      value: /workspace/go
+    workingDir: "/workspace/go/src/github.com/summerwind/eventreactor"
+    command: ["make"]
+    args: ["test"]
+  timeout: 30m
