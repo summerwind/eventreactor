@@ -18,6 +18,7 @@ type Action struct {
 	Date     metav1.Time
 	Event    string
 	Pipeline string
+	Status   string
 	Steps    []ActionStep
 }
 
@@ -59,25 +60,14 @@ func actionsGetRun(cmd *cobra.Command, args []string) error {
 
 	a := &Action{
 		Name:     action.Name,
+		Status:   action.CompletionStatus(),
 		Date:     action.ObjectMeta.CreationTimestamp,
 		Event:    action.Spec.Event.Name,
 		Pipeline: action.Spec.Pipeline.Name,
 		Steps:    []ActionStep{},
 	}
 
-	sources := len(action.Spec.BuildSpec.Sources)
-	if action.Spec.BuildSpec.Source != nil {
-		sources += 1
-	}
-	if sources > 0 {
-		sources += 1
-	}
-
 	for i, s := range action.Status.BuildStatus.StepsCompleted {
-		if i < sources {
-			continue
-		}
-
 		state := action.Status.StepStates[i].Terminated
 		if state == nil {
 			continue
@@ -107,9 +97,10 @@ func actionsGetRun(cmd *cobra.Command, args []string) error {
 
 const actionTemplate = `
 Name:     {{ .Name }}
+Status:   {{ .Status }}
+Date:     {{ .Date }}
 Event:    {{ .Event }}
 Pipeline: {{ .Pipeline }}
-Date:     {{ .Date }}
 
 {{ range $i, $s := .Steps -}}
 [ {{ $s.Name }} ]
