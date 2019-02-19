@@ -159,6 +159,18 @@ func (a Action) CompletionStatus() string {
 	return status
 }
 
+// FailedReason returns brief reason of the status
+func (a Action) FailedReason() string {
+	reason := ""
+
+	cond := a.Status.BuildStatus.GetCondition(buildv1alpha1.BuildSucceeded)
+	if cond == nil {
+		return reason
+	}
+
+	return cond.Reason
+}
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ActionList contains a list of Action.

@@ -15,10 +15,11 @@ import (
 
 type Action struct {
 	Name     string
+	Status   string
+	Reason   string
 	Date     metav1.Time
 	Event    string
 	Pipeline string
-	Status   string
 	Steps    []ActionStep
 }
 
@@ -61,6 +62,7 @@ func actionsGetRun(cmd *cobra.Command, args []string) error {
 	a := &Action{
 		Name:     action.Name,
 		Status:   action.CompletionStatus(),
+		Reason:   action.FailedReason(),
 		Date:     action.ObjectMeta.CreationTimestamp,
 		Event:    action.Spec.Event.Name,
 		Pipeline: action.Spec.Pipeline.Name,
@@ -97,7 +99,7 @@ func actionsGetRun(cmd *cobra.Command, args []string) error {
 
 const actionTemplate = `
 Name:     {{ .Name }}
-Status:   {{ .Status }}
+Status:   {{ .Status }}{{ if .Reason }} ({{ .Reason }}){{ end }}
 Date:     {{ .Date }}
 Event:    {{ .Event }}
 Pipeline: {{ .Pipeline }}
