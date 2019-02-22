@@ -30,6 +30,7 @@ install: manifests
 deploy: manifests
 	kubectl apply -f config/crds
 	kustomize build config/default | kubectl apply -f -
+	kustomize build config/apps | kubectl apply -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests:
@@ -55,4 +56,3 @@ docker-build: test
 # Push the docker image
 docker-push:
 	docker push summerwind/eventreactor:latest
-
