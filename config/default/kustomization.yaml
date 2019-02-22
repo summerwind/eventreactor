@@ -1,10 +1,14 @@
-resources:
-- ../crds/eventreactor_v1alpha1_event.yaml
-- ../crds/eventreactor_v1alpha1_pipeline.yaml
-- ../crds/eventreactor_v1alpha1_action.yaml
-- ../rbac/rbac_role.yaml
-- ../rbac/rbac_role_binding.yaml
-- ../manager/manager.yaml
-
+bases:
+- ../crds
+- ../rbac
+- ../manager
+  #resources:
+  #- ../crds/eventreactor_v1alpha1_event.yaml
+  #- ../crds/eventreactor_v1alpha1_pipeline.yaml
+  #- ../crds/eventreactor_v1alpha1_action.yaml
+  #- ../rbac/rbac_role.yaml
+  #- ../rbac/rbac_role_binding.yaml
+  #- ../manager/manager.yaml
+  #
 patches:
 - rbac_role_binding_patch.yaml

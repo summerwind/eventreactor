@@ -1,0 +1,4 @@
+resources:
+- eventreactor_v1alpha1_action.yaml
+- eventreactor_v1alpha1_event.yaml
+- eventreactor_v1alpha1_pipeline.yaml
