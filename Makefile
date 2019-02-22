@@ -60,6 +60,10 @@ docker-push:
 release:
 	hack/release.sh
 
+# Create vendor
+vendor:
+	dep ensure -v
+
 # Cleanup
 clean:
 	rm -rf release/
