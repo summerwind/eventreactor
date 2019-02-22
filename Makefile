@@ -26,9 +26,8 @@ event-receiver: generate fmt vet
 install: manifests
 	kubectl apply -f config/crds
 
-# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+# Deploy manifests in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests
-	kubectl apply -f config/crds
 	kustomize build config/default | kubectl apply -f -
 	kustomize build config/apps | kubectl apply -f -
 
@@ -56,3 +55,13 @@ docker-build: test
 # Push the docker image
 docker-push:
 	docker push summerwind/eventreactor:latest
+
+# Build release assets
+release:
+	hack/release.sh
+
+# Cleanup
+clean:
+	rm -rf release/
+	rm -rf bin/*
+	rm -rf cover.out
