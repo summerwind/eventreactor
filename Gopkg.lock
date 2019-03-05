@@ -235,7 +235,7 @@
   version = "v1.1.5"
 
 [[projects]]
-  digest = "1:4456b6fb170b0554f39e518bf0dc809fcfd3fb8d628df21c21d762154bcf3dbe"
+  digest = "1:64ef47bd7ea071591e7af5967431c4827930690e2183b3c1b0d4f496f46e5bc4"
   name = "github.com/knative/build"
   packages = [
     "pkg/apis/build",
@@ -243,8 +243,8 @@
     "pkg/client/clientset/versioned/scheme",
   ]
   pruneopts = "T"
-  revision = "695fd25502db3d040ae4c690d7c53a7b842500d3"
-  version = "v0.3.0"
+  revision = "ee63efca9865c41732883f4eb0aef3be13becedd"
+  version = "v0.4.0"
 
 [[projects]]
   branch = "master"
@@ -993,6 +993,7 @@
     "github.com/go-logr/logr",
     "github.com/knative/build/pkg/apis/build/v1alpha1",
     "github.com/knative/build/pkg/client/clientset/versioned/scheme",
+    "github.com/knative/pkg/apis/duck/v1alpha1",
     "github.com/oklog/ulid",
     "github.com/onsi/ginkgo",
     "github.com/onsi/gomega",
