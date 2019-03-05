@@ -22,8 +22,8 @@ spec:
     - name: GOPATH
       value: /workspace/go
     workingDir: "/workspace/go/src/github.com/summerwind/eventreactor"
-    command: ["dep"]
-    args: ["ensure", "-v"]
+    command: ["make"]
+    args: ["vendor"]
   - name: test
     image: summerwind/kubebuilder:latest
     env:
