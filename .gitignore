@@ -24,7 +24,11 @@ bin
 # Do not keep vendor
 vendor
 
+# Do not keep release files
+release
+
 # Do not keep binary
 cmd/manager/manager
 cmd/event-receiver/event-receiver
+cmd/resource-cleaner/resource-cleaner
 cmd/reactorctl/reactorctl
