@@ -1,7 +1,7 @@
 apiVersion: eventreactor.summerwind.github.io/v1alpha1
 kind: Pipeline
 metadata:
-  name: eventreactor-test
+  name: eventreactor-build
   labels:
     notification: slack
 spec:
@@ -18,18 +18,22 @@ spec:
   steps:
   - name: vendor
     image: summerwind/kubebuilder:latest
-    env:
-    - name: GOPATH
-      value: /workspace/go
-    workingDir: "/workspace/go/src/github.com/summerwind/eventreactor"
     command: ["make"]
     args: ["vendor"]
-  - name: test
-    image: summerwind/kubebuilder:latest
+    workingDir: "/workspace/go/src/github.com/summerwind/eventreactor"
     env:
     - name: GOPATH
       value: /workspace/go
-    workingDir: "/workspace/go/src/github.com/summerwind/eventreactor"
+  - name: test
+    image: summerwind/kubebuilder:latest
     command: ["make"]
     args: ["test"]
+    workingDir: "/workspace/go/src/github.com/summerwind/eventreactor"
+    env:
+    - name: GOPATH
+      value: /workspace/go
+  - name: build
+    image: gcr.io/kaniko-project/executor:latest
+    args: ["--dockerfile=Dockerfile", "--no-push"]
+    workingDir: "/workspace/go/src/github.com/summerwind/eventreactor"
   timeout: 30m
