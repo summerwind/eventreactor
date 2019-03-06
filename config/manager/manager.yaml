@@ -1,19 +1,19 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: eventreactor-system
+  name: eventreactor
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: eventreactor-controller
-  namespace: eventreactor-system
+  namespace: eventreactor
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: eventreactor-controller
-  namespace: eventreactor-system
+  namespace: eventreactor
 spec:
   replicas: 1
   selector:

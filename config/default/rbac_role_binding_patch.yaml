@@ -5,4 +5,4 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: eventreactor-controller
-  namespace: eventreactor-system
+  namespace: eventreactor
