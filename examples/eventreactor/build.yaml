@@ -34,6 +34,5 @@ spec:
       value: /workspace/go
   - name: build
     image: gcr.io/kaniko-project/executor:latest
-    args: ["--dockerfile=Dockerfile", "--no-push"]
-    workingDir: "/workspace/go/src/github.com/summerwind/eventreactor"
-  timeout: 30m
+    args: ["--dockerfile=Dockerfile", "--context=dir:///workspace/go/src/github.com/summerwind/eventreactor", "--no-push"]
+  timeout: 60m
