@@ -10,7 +10,7 @@ cd ${BASE_DIR}
 
 echo "Generating manifests..."
 kustomize build ../config/default > eventreactor.yaml
-kustomize build ../config/apps > eventreactor-apps.yaml
+kustomize build ../config/addons > eventreactor-addons.yaml
 
 echo "Building binaries..."
 for os in ${TARGET_OS}; do
