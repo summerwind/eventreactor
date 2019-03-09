@@ -256,7 +256,7 @@ func (r *ReconcileAction) newBuild(action *v1alpha1.Action) *buildv1alpha1.Build
 			},
 			corev1.EnvVar{
 				Name:  "ER_UPSTREAM_STATUS",
-				Value: action.Spec.Upstream.Status,
+				Value: string(action.Spec.Upstream.Status),
 			},
 			corev1.EnvVar{
 				Name:  "ER_UPSTREAM_PIPELINE",

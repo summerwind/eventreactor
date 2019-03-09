@@ -247,13 +247,14 @@ func TestCompletionStatus(t *testing.T) {
 	}
 
 	var tests = []struct {
-		cond   *duckv1alpha1.Condition
-		status string
+		cond     *duckv1alpha1.Condition
+		exitCode int32
+		status   CompletionStatus
 	}{
-		{successCond, "success"},
-		{failureCond, "failure"},
-		{unknownCond, ""},
-		{nil, ""},
+		{successCond, 0, CompletionStatusSuccess},
+		{failureCond, 1, CompletionStatusFailure},
+		{unknownCond, 57, CompletionStatusUnknown},
+		{nil, 0, CompletionStatusUnknown},
 	}
 
 	g := gomega.NewGomegaWithT(t)
@@ -265,7 +266,15 @@ func TestCompletionStatus(t *testing.T) {
 				Namespace: "default",
 			},
 			Status: ActionStatus{
-				BuildStatus: buildv1alpha1.BuildStatus{},
+				BuildStatus: buildv1alpha1.BuildStatus{
+					StepStates: []corev1.ContainerState{
+						corev1.ContainerState{
+							Terminated: &corev1.ContainerStateTerminated{
+								ExitCode: test.exitCode,
+							},
+						},
+					},
+				},
 			},
 		}
 

@@ -68,6 +68,7 @@ spec:
                       enum:
                       - success
                       - failure
+                      - neutral
                       type: string
                   type: object
               type: object

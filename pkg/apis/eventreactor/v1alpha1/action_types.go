@@ -22,9 +22,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type CompletionStatus string
+
 const (
-	CompletionStatusSuccess = "success"
-	CompletionStatusFailure = "failure"
+	CompletionStatusSuccess CompletionStatus = "success"
+	CompletionStatusFailure CompletionStatus = "failure"
+	CompletionStatusNeutral CompletionStatus = "neutral"
+	CompletionStatusUnknown CompletionStatus = "unknown"
+
+	ExitCodeNeutral int32 = 78
 )
 
 // ActionSpecEvent defines the event information of Action.
@@ -59,7 +65,7 @@ type ActionSpecUpstream struct {
 	Name string `json:"name"`
 
 	// Status specifies the status of upstream action.
-	Status string `json:"status"`
+	Status CompletionStatus `json:"status"`
 
 	// Pipeline is the pipeline name of upstream action.
 	Pipeline string `json:"pipeline"`
@@ -141,8 +147,8 @@ func (a Action) IsFailed() bool {
 }
 
 // CompletionStatus returns "success" or "failure" based on the state of Action.
-func (a Action) CompletionStatus() string {
-	status := ""
+func (a Action) CompletionStatus() CompletionStatus {
+	status := CompletionStatusUnknown
 
 	cond := a.Status.BuildStatus.GetCondition(buildv1alpha1.BuildSucceeded)
 	if cond == nil {
@@ -154,6 +160,14 @@ func (a Action) CompletionStatus() string {
 		status = CompletionStatusSuccess
 	case corev1.ConditionFalse:
 		status = CompletionStatusFailure
+	}
+
+	if status == CompletionStatusFailure && len(a.Status.BuildStatus.StepStates) > 0 {
+		last := len(a.Status.BuildStatus.StepStates) - 1
+		ss := a.Status.BuildStatus.StepStates[last]
+		if ss.Terminated != nil && ss.Terminated.ExitCode == ExitCodeNeutral {
+			status = CompletionStatusNeutral
+		}
 	}
 
 	return status

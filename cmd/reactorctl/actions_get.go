@@ -61,7 +61,7 @@ func actionsGetRun(cmd *cobra.Command, args []string) error {
 
 	a := &Action{
 		Name:     action.Name,
-		Status:   action.CompletionStatus(),
+		Status:   string(action.CompletionStatus()),
 		Reason:   action.FailedReason(),
 		Date:     action.ObjectMeta.CreationTimestamp,
 		Event:    action.Spec.Event.Name,

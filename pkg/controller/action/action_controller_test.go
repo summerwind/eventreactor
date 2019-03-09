@@ -245,7 +245,7 @@ func TestNewBuild(t *testing.T) {
 		g.Expect(step.Env[4].Name).To(gomega.Equal("ER_UPSTREAM_NAME"))
 		g.Expect(step.Env[4].Value).To(gomega.Equal(action1.Spec.Upstream.Name))
 		g.Expect(step.Env[5].Name).To(gomega.Equal("ER_UPSTREAM_STATUS"))
-		g.Expect(step.Env[5].Value).To(gomega.Equal(action1.Spec.Upstream.Status))
+		g.Expect(step.Env[5].Value).To(gomega.Equal(string(action1.Spec.Upstream.Status)))
 		g.Expect(step.Env[6].Name).To(gomega.Equal("ER_UPSTREAM_PIPELINE"))
 		g.Expect(step.Env[6].Value).To(gomega.Equal(action1.Spec.Upstream.Pipeline))
 		g.Expect(step.Env[7].Name).To(gomega.Equal("ER_UPSTREAM_VIA"))

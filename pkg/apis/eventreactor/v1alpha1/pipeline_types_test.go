@@ -139,13 +139,14 @@ func TestEventTriggerTypeValidation(t *testing.T) {
 
 func TestPipelineTriggerStatusValidation(t *testing.T) {
 	var tests = []struct {
-		status string
+		status CompletionStatus
 		valid  bool
 	}{
-		{"success", true},
-		{"failure", true},
-		{"", true},
-		{"invalid", false},
+		{CompletionStatusSuccess, true},
+		{CompletionStatusFailure, true},
+		{CompletionStatusNeutral, true},
+		{CompletionStatus(""), true},
+		{CompletionStatus("invalid"), false},
 	}
 
 	g := gomega.NewGomegaWithT(t)

@@ -45,8 +45,8 @@ type PipelineTriggerPipeline struct {
 
 	// Status specifies the status of pipeline. If the value is empty,
 	// it matches both success and failure.
-	// +kubebuilder:validation:Enum=success,failure
-	Status string `json:"status,omitempty"`
+	// +kubebuilder:validation:Enum=success,failure,neutral
+	Status CompletionStatus `json:"status,omitempty"`
 }
 
 // PipelineTrigger defines the cause of pipeline execution.
