@@ -157,7 +157,7 @@ Use the `reactorctl actions get` command to check the details of the action. You
 ```
 $ reactorctl actions get 01d5hczh2etmb9txj04jmjyycg
 Name:     01d5hczh2etmb9txj04jmjyycg
-Status:   success
+Status:   Succeeded
 Date:     2019-03-09 23:16:17 +0900 JST
 Event:    01d5hczh1cb71xp22pd6qkbptm
 Pipeline: hello
