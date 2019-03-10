@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"strings"
 
+	buildv1alpha1 "github.com/knative/build/pkg/apis/build/v1alpha1"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
@@ -59,10 +61,31 @@ func actionsGetRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	cond := action.Status.GetCondition(buildv1alpha1.BuildSucceeded)
+	status := "Pending"
+
+	if cond != nil {
+		switch cond.Status {
+		case corev1.ConditionTrue:
+			status = "Succeeded"
+			cs := action.CompletionStatus()
+			if cs == v1alpha1.CompletionStatusNeutral {
+				status = fmt.Sprintf("Succeeded (Neutral)")
+			}
+		case corev1.ConditionFalse:
+			status = "Failed"
+			reason := action.FailedReason()
+			if reason != "" {
+				status = fmt.Sprintf("Failed (%s)", reason)
+			}
+		case corev1.ConditionUnknown:
+			status = "Running"
+		}
+	}
+
 	a := &Action{
 		Name:     action.Name,
-		Status:   string(action.CompletionStatus()),
-		Reason:   action.FailedReason(),
+		Status:   status,
 		Date:     action.ObjectMeta.CreationTimestamp,
 		Event:    action.Spec.Event.Name,
 		Pipeline: action.Spec.Pipeline.Name,
@@ -99,7 +122,7 @@ func actionsGetRun(cmd *cobra.Command, args []string) error {
 
 const actionTemplate = `
 Name:     {{ .Name }}
-Status:   {{ .Status }}{{ if .Reason }} ({{ .Reason }}){{ end }}
+Status:   {{ .Status }}
 Date:     {{ .Date }}
 Event:    {{ .Event }}
 Pipeline: {{ .Pipeline }}
