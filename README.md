@@ -16,3 +16,4 @@ Event Reactor is developed to deal with the following use cases:
 Follow the links below to learn more about Event Reactor.
 
 - [Design Overview](docs/design.md)
+- [Getting Started](docs/getting-started.md)

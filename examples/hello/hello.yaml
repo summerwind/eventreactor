@@ -1,0 +1,14 @@
+apiVersion: eventreactor.summerwind.github.io/v1alpha1
+kind: Pipeline
+metadata:
+  name: hello
+spec:
+  trigger:
+    event:
+      type: test.hello
+      sourcePattern: .+
+  steps:
+  - name: hello
+    image: ubuntu:18.04
+    command: ["echo"]
+    args: ["hello world!"]
