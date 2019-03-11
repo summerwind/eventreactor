@@ -61,7 +61,7 @@ docker-push-release:
 
 # Build release assets
 release:
-	hack/release.sh
+	hack/release.sh $(VERSION)
 
 # Create vendor
 vendor:
