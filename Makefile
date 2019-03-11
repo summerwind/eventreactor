@@ -51,9 +51,13 @@ generate:
 docker-build: test
 	docker build -t summerwind/eventreactor:latest -t summerwind/eventreactor:$(VERSION) .
 
-# Push the docker image
-docker-push:
+# Push the latest image
+docker-push-latest:
 	docker push summerwind/eventreactor:latest
+
+# Push the release image
+docker-push-release:
+	docker push summerwind/eventreactor:$(VERSION)
 
 # Build release assets
 release:
