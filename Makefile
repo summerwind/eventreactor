@@ -11,6 +11,7 @@ binary: generate fmt vet
 	CGO_ENABLED=0 go build -o bin/manager github.com/summerwind/eventreactor/cmd/manager
 	CGO_ENABLED=0 go build -o bin/event-receiver github.com/summerwind/eventreactor/cmd/event-receiver
 	CGO_ENABLED=0 go build -o bin/resource-cleaner github.com/summerwind/eventreactor/cmd/resource-cleaner
+	CGO_ENABLED=0 go build -o bin/event-init github.com/summerwind/eventreactor/cmd/event-init
 	CGO_ENABLED=0 go build -o bin/reactorctl github.com/summerwind/eventreactor/cmd/reactorctl
 
 # Run manager against the configured Kubernetes cluster in ~/.kube/config
@@ -49,15 +50,18 @@ generate:
 
 # Build the docker image
 docker-build: test
-	docker build -t summerwind/eventreactor:latest -t summerwind/eventreactor:$(VERSION) .
+	docker build --target eventreactor -t summerwind/eventreactor:latest -t summerwind/eventreactor:$(VERSION) .
+	docker build --target event-init -t summerwind/event-init:latest -t summerwind/event-init:$(VERSION) .
 
 # Push the latest image
-docker-push-latest:
+docker-push:
 	docker push summerwind/eventreactor:latest
+	docker push summerwind/event-init:latest
 
 # Push the release image
 docker-push-release:
 	docker push summerwind/eventreactor:$(VERSION)
+	docker push summerwind/event-init:$(VERSION)
 
 # Build release assets
 release:
