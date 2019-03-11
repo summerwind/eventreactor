@@ -19,6 +19,7 @@ package action
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -59,6 +60,13 @@ var errUpstreamLimitExceeded = errors.New("upstream limit exceeded")
 // logReader is a dummy reader for testing purpose.
 // If this variable set to non-nil, pod log will be read from this reader.
 var logReader io.ReadCloser
+
+var (
+	// The container used to initialize event files before the action runs.
+	eventImage = flag.String("event-image", "summerwind/event-init:latest", "The container image for preparing event files for Action.")
+	// The path used to initialize event files.
+	eventPath = flag.String("event-path", "/workspace/.event", "The path to expand contents of Event resource.")
+)
 
 // Add creates a new Action Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -269,6 +277,15 @@ func (r *ReconcileAction) newBuild(action *v1alpha1.Action) *buildv1alpha1.Build
 		}
 		envVars = append(envVars, upstreamEnvVars...)
 	}
+
+	eventInit := buildv1alpha1.SourceSpec{
+		Name: "event-init",
+		Custom: &corev1.Container{
+			Image: *eventImage,
+			Args:  []string{"-n", action.Namespace, "-e", action.Spec.Event.Name, "-p", *eventPath},
+		},
+	}
+	buildSpec.Sources = append(buildSpec.Sources, eventInit)
 
 	for i, _ := range buildSpec.Steps {
 		buildSpec.Steps[i].Env = append(buildSpec.Steps[i].Env, envVars...)

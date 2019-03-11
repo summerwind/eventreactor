@@ -229,6 +229,9 @@ func TestNewBuild(t *testing.T) {
 	}
 
 	build1 := r.newBuild(action1)
+	g.Expect(build1.Spec.Sources[0].Custom.Image).To(gomega.Equal(*eventImage))
+	g.Expect(build1.Spec.Sources[0].Custom.Args).To(gomega.Equal([]string{"-n", action1.Namespace, "-e", action1.Spec.Event.Name, "-p", *eventPath}))
+
 	for i, step := range build1.Spec.Steps {
 		g.Expect(step.Name).To(gomega.Equal(action1.Spec.BuildSpec.Steps[i].Name))
 		g.Expect(step.Image).To(gomega.Equal(action1.Spec.BuildSpec.Steps[i].Image))
