@@ -18,6 +18,7 @@ echo "Generating manifests..."
 kustomize build ../config/default > eventreactor.yaml
 kustomize build ../config/addons > eventreactor-addons.yaml
 sed -i "s/eventreactor:latest/eventreactor:${VERSION}/" eventreactor.yaml
+sed -i "s/event-init:latest/event-init:${VERSION}/" eventreactor.yaml
 sed -i "s/eventreactor:latest/eventreactor:${VERSION}/" eventreactor-addons.yaml
 
 echo "Building binaries..."

@@ -29,6 +29,7 @@ spec:
         image: summerwind/eventreactor:latest
         imagePullPolicy: Always
         command: ["/bin/manager"]
+        args: ["-event-image", "summerwind/event-init:latest"]
         resources:
           requests:
             cpu: 100m
