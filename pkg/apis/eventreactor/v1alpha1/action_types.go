@@ -163,9 +163,15 @@ func (a Action) CompletionStatus() CompletionStatus {
 	}
 
 	if status == CompletionStatusFailure && len(a.Status.BuildStatus.StepStates) > 0 {
-		last := len(a.Status.BuildStatus.StepStates) - 1
-		ss := a.Status.BuildStatus.StepStates[last]
-		if ss.Terminated != nil && ss.Terminated.ExitCode == ExitCodeNeutral {
+		var lastExitCode int32
+
+		for _, ss := range a.Status.BuildStatus.StepStates {
+			if ss.Terminated != nil {
+				lastExitCode = ss.Terminated.ExitCode
+			}
+		}
+
+		if lastExitCode == ExitCodeNeutral {
 			status = CompletionStatusNeutral
 		}
 	}

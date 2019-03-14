@@ -9,9 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	buildv1alpha1 "github.com/knative/build/pkg/apis/build/v1alpha1"
 	"github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -85,18 +83,21 @@ func actionsListRun(cmd *cobra.Command, args []string) error {
 			break
 		}
 
-		cond := a.Status.GetCondition(buildv1alpha1.BuildSucceeded)
 		status := "Pending"
-
-		if cond != nil {
-			switch cond.Status {
-			case corev1.ConditionTrue:
-				status = "Succeeded"
-			case corev1.ConditionFalse:
+		switch a.CompletionStatus() {
+		case v1alpha1.CompletionStatusSuccess:
+			status = "Succeeded"
+		case v1alpha1.CompletionStatusFailure:
+			reason := a.FailedReason()
+			if reason != "" {
+				status = fmt.Sprintf("Failed (%s)", reason)
+			} else {
 				status = "Failed"
-			case corev1.ConditionUnknown:
-				status = "Running"
 			}
+		case v1alpha1.CompletionStatusNeutral:
+			status = "Neutral"
+		case v1alpha1.CompletionStatusUnknown:
+			status = "Running"
 		}
 
 		date := a.ObjectMeta.CreationTimestamp.Format("2006-01-02 15:04:05")
