@@ -1,3 +1,4 @@
 resources:
+- event-init.yaml
 - event-receiver.yaml
 - resource-cleaner.yaml

@@ -1,0 +1,27 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  creationTimestamp: null
+  name: event-init
+rules:
+- apiGroups:
+  - eventreactor.summerwind.github.io
+  resources:
+  - events
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  creationTimestamp: null
+  name: event-init
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: event-init
+subjects:
+- kind: ServiceAccount
+  name: default
