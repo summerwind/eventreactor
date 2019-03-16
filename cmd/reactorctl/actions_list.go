@@ -10,7 +10,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func NewActionsListCommand() *cobra.Command {
@@ -56,7 +55,6 @@ func actionsListRun(cmd *cobra.Command, args []string) error {
 
 	opts := client.MatchingLabels(selector)
 	opts.Namespace = namespace
-	opts.Raw = &metav1.ListOptions{Limit: int64(limit)}
 
 	actionList := &v1alpha1.ActionList{}
 	err = c.List(context.TODO(), opts, actionList)
@@ -64,15 +62,18 @@ func actionsListRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if len(actionList.Items) == 0 {
+	actionLen := len(actionList.Items)
+
+	if actionLen == 0 {
 		fmt.Println("No resources found.")
 		return nil
 	}
 
-	start := len(actionList.Items) - limit
+	start := actionLen - limit
 	if start < 0 {
 		start = 0
 	}
+
 	actions := actionList.Items[start:]
 
 	writer := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
