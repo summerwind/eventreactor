@@ -185,3 +185,112 @@ func TestPipelineTriggerStatusValidation(t *testing.T) {
 		}
 	}
 }
+
+func TestValidate(t *testing.T) {
+	valid := &Pipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-validate-valid",
+			Namespace: "default",
+		},
+		Spec: PipelineSpec{
+			Trigger: PipelineTrigger{
+				Event: &PipelineTriggerEvent{
+					Type:          "eventreactor.test",
+					SourcePattern: ".+",
+				},
+			},
+			BuildSpec: buildv1alpha1.BuildSpec{
+				Steps: []corev1.Container{
+					corev1.Container{
+						Name:  "hello",
+						Image: "ubuntu:18.04",
+						Args:  []string{"echo", "hello world"},
+					},
+				},
+			},
+		},
+	}
+
+	invalidNoTrigger := &Pipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-validate-invalid-no-trigger",
+			Namespace: "default",
+		},
+		Spec: PipelineSpec{
+			Trigger: PipelineTrigger{},
+			BuildSpec: buildv1alpha1.BuildSpec{
+				Steps: []corev1.Container{
+					corev1.Container{
+						Name:  "hello",
+						Image: "ubuntu:18.04",
+						Args:  []string{"echo", "hello world"},
+					},
+				},
+			},
+		},
+	}
+
+	invalidDoubleTrigger := &Pipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-validate-invalid-double-trigger",
+			Namespace: "default",
+		},
+		Spec: PipelineSpec{
+			Trigger: PipelineTrigger{
+				Event: &PipelineTriggerEvent{
+					Type:          "eventreactor.test",
+					SourcePattern: ".+",
+				},
+				Pipeline: &PipelineTriggerPipeline{
+					Name: "test",
+				},
+			},
+			BuildSpec: buildv1alpha1.BuildSpec{
+				Steps: []corev1.Container{
+					corev1.Container{
+						Name:  "hello",
+						Image: "ubuntu:18.04",
+						Args:  []string{"echo", "hello world"},
+					},
+				},
+			},
+		},
+	}
+
+	invalidBuildSpec := &Pipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-validate-invalid-buildspec",
+			Namespace: "default",
+		},
+		Spec: PipelineSpec{
+			Trigger: PipelineTrigger{
+				Event: &PipelineTriggerEvent{
+					Type:          "eventreactor.test",
+					SourcePattern: ".+",
+				},
+			},
+			BuildSpec: buildv1alpha1.BuildSpec{},
+		},
+	}
+
+	var tests = []struct {
+		pipeline *Pipeline
+		valid    bool
+	}{
+		{valid, true},
+		{invalidNoTrigger, false},
+		{invalidDoubleTrigger, false},
+		{invalidBuildSpec, false},
+	}
+
+	g := gomega.NewGomegaWithT(t)
+
+	for _, test := range tests {
+		err := test.pipeline.Validate()
+		if test.valid {
+			g.Expect(err).NotTo(gomega.HaveOccurred())
+		} else {
+			g.Expect(err).To(gomega.HaveOccurred())
+		}
+	}
+}

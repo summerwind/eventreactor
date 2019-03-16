@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"errors"
+
 	buildv1alpha1 "github.com/knative/build/pkg/apis/build/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -57,6 +59,19 @@ type PipelineTrigger struct {
 	Pipeline *PipelineTriggerPipeline `json:"pipeline,omitempty"`
 }
 
+// Validate returns error when its field values are invalid.
+func (pt PipelineTrigger) Validate() error {
+	if pt.Event == nil && pt.Pipeline == nil {
+		return errors.New("Trigger must be specified")
+	}
+
+	if pt.Event != nil && pt.Pipeline != nil {
+		return errors.New("Trigger must be exactly one")
+	}
+
+	return nil
+}
+
 // PipelineSpec defines the desired state of Pipeline.
 type PipelineSpec struct {
 	buildv1alpha1.BuildSpec
@@ -80,6 +95,21 @@ type Pipeline struct {
 
 	Spec   PipelineSpec   `json:"spec,omitempty"`
 	Status PipelineStatus `json:"status,omitempty"`
+}
+
+// Validate returns error when its field values are invalid.
+func (p Pipeline) Validate() error {
+	err := p.Spec.Trigger.Validate()
+	if err != nil {
+		return err
+	}
+
+	fieldErr := p.Spec.BuildSpec.Validate()
+	if fieldErr != nil {
+		return fieldErr
+	}
+
+	return nil
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
