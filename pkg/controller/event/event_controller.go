@@ -125,6 +125,13 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 	}
 
 	for _, pipeline := range pipelineList.Items {
+		err := pipeline.Validate()
+		if err != nil {
+			r.log.Info("Ignored with validation error", "pipeline", pipeline.Name)
+			r.recorder.Event(instance, "Warning", "InvalidPipeline", fmt.Sprintf("Ignored \"%s/%s\" with validation error: %s", pipeline.Namespace, pipeline.Name, err.Error()))
+			continue
+		}
+
 		if pipeline.Spec.Trigger.Event.Type != instance.Spec.Type {
 			r.log.Info("Ignored with mismatched event type", "pipeline", pipeline.Name)
 			r.recorder.Event(instance, "Warning", "InvalidPipeline", fmt.Sprintf("Ignored \"%s/%s\" with mismatched event type", pipeline.Namespace, pipeline.Name))

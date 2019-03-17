@@ -78,17 +78,22 @@ func TestReconcile(t *testing.T) {
 		mgrStopped.Wait()
 	}()
 
-	// Create pipelines
-	pipelines := [][]string{
-		[]string{"test-valid", "eventreactor.test", "/eventreactor/test/.*"},
-		[]string{"test-type-mismatched", "eventreactor.dummy", "/eventreactor/test/.*"},
-		[]string{"test-source-mismatched", "eventreactor.test", "/eventreactor/dummy/.*"},
+	var pipelines = []struct {
+		name        string
+		valid       bool
+		eventType   string
+		eventSource string
+	}{
+		{"test-valid", true, "eventreactor.test", "/eventreactor/test/.*"},
+		{"test-invalid", false, "eventreactor.test", "/eventreactor/test/.*"},
+		{"test-type-mismatched", true, "eventreactor.dummy", "/eventreactor/test/.*"},
+		{"test-source-mismatched", true, "eventreactor.test", "/eventreactor/dummy/.*"},
 	}
 
-	for _, info := range pipelines {
+	for _, p := range pipelines {
 		pipeline := &v1alpha1.Pipeline{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      info[0],
+				Name:      p.name,
 				Namespace: "default",
 				Labels: map[string]string{
 					v1alpha1.KeyEventType: "eventreactor.test",
@@ -105,13 +110,16 @@ func TestReconcile(t *testing.T) {
 						},
 					},
 				},
-				Trigger: v1alpha1.PipelineTrigger{
-					Event: &v1alpha1.PipelineTriggerEvent{
-						Type:          info[1],
-						SourcePattern: info[2],
-					},
-				},
 			},
+		}
+
+		if p.valid {
+			pipeline.Spec.Trigger = v1alpha1.PipelineTrigger{
+				Event: &v1alpha1.PipelineTriggerEvent{
+					Type:          p.eventType,
+					SourcePattern: p.eventSource,
+				},
+			}
 		}
 
 		g.Expect(c.Create(context.TODO(), pipeline)).NotTo(gomega.HaveOccurred())
@@ -139,13 +147,13 @@ func TestReconcile(t *testing.T) {
 	// Test the value of action
 	action := actionList.Items[0]
 	g.Expect(action.ObjectMeta.Labels[v1alpha1.KeyEventName]).To(gomega.Equal(instance.Name))
-	g.Expect(action.ObjectMeta.Labels[v1alpha1.KeyPipelineName]).To(gomega.Equal(pipelines[0][0]))
+	g.Expect(action.ObjectMeta.Labels[v1alpha1.KeyPipelineName]).To(gomega.Equal(pipelines[0].name))
 	g.Expect(action.ObjectMeta.Labels[v1alpha1.KeyTransactionID]).NotTo(gomega.Equal(""))
 	g.Expect(action.ObjectMeta.Labels["test"]).To(gomega.Equal("yes"))
 	g.Expect(action.Spec.Event.Name).To(gomega.Equal(instance.Name))
 	g.Expect(action.Spec.Event.Type).To(gomega.Equal(instance.Spec.Type))
 	g.Expect(action.Spec.Event.Source).To(gomega.Equal(instance.Spec.Source))
-	g.Expect(action.Spec.Pipeline.Name).To(gomega.Equal(pipelines[0][0]))
+	g.Expect(action.Spec.Pipeline.Name).To(gomega.Equal(pipelines[0].name))
 	g.Expect(action.Spec.Transaction.ID).NotTo(gomega.Equal(""))
 	g.Expect(action.Spec.Transaction.Stage).To(gomega.Equal(1))
 
