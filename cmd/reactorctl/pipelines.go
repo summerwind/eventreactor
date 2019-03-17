@@ -1,14 +1,14 @@
 package main
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"strings"
 
-	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 	"github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
+	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 func NewPipelinesCommand() *cobra.Command {
@@ -25,10 +25,10 @@ func NewPipelinesCommand() *cobra.Command {
 	return cmd
 }
 
-func loadPipelineFromFile(f string) (*v1alpha1.Pipeline, error) {
+func loadPipelinesFromFile(f string) ([]*v1alpha1.Pipeline, error) {
 	var (
-		buf []byte
-		err error
+		reader io.Reader
+		err    error
 	)
 
 	switch {
@@ -39,28 +39,43 @@ func loadPipelineFromFile(f string) (*v1alpha1.Pipeline, error) {
 		}
 		defer res.Body.Close()
 
-		buf, err = ioutil.ReadAll(res.Body)
-		if err != nil {
-			return nil, err
-		}
+		reader = res.Body
+		//buf, err = ioutil.ReadAll(res.Body)
+		//if err != nil {
+		//	return nil, err
+		//}
 	case f == "-":
-		buf, err = ioutil.ReadAll(os.Stdin)
-		if err != nil {
-			return nil, err
-		}
+		reader = os.Stdin
+		//buf, err = ioutil.ReadAll(os.Stdin)
+		//if err != nil {
+		//	return nil, err
+		//}
 	default:
-		buf, err = ioutil.ReadFile(f)
+		reader, err = os.Open(f)
 		if err != nil {
 			return nil, err
 		}
+		//buf, err = ioutil.ReadFile(f)
+		//if err != nil {
+		//	return nil, err
+		//}
 	}
 
-	pipeline := v1alpha1.Pipeline{}
+	decoder := yaml.NewYAMLOrJSONDecoder(reader, 4096)
 
-	err = yaml.Unmarshal(buf, &pipeline)
-	if err != nil {
-		return nil, err
+	pipelines := []*v1alpha1.Pipeline{}
+	for {
+		p := &v1alpha1.Pipeline{}
+		err := decoder.Decode(p)
+		if err != nil {
+			if err != io.EOF {
+				return nil, err
+			}
+			break
+		}
+
+		pipelines = append(pipelines, p)
 	}
 
-	return &pipeline, nil
+	return pipelines, nil
 }

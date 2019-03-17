@@ -37,51 +37,56 @@ func pipelinesSetRun(cmd *cobra.Command, args []string) error {
 		return errors.New("filename must be specified")
 	}
 
-	new, err := loadPipelineFromFile(f)
+	pipelines, err := loadPipelinesFromFile(f)
 	if err != nil {
 		return err
 	}
 
-	new.Namespace = namespace
-
-	err = new.Validate()
-	if err != nil {
-		return err
+	for _, p := range pipelines {
+		err = p.Validate()
+		if err != nil {
+			return fmt.Errorf("pipeline \"%s\" is invalid: %v", p.Name, err)
+		}
 	}
 
-	key := types.NamespacedName{
-		Name:      new.Name,
-		Namespace: new.Namespace,
-	}
-
-	pipeline := &v1alpha1.Pipeline{}
-	err = c.Get(context.TODO(), key, pipeline)
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
+	for _, p := range pipelines {
+		if p.Namespace == "" {
+			p.Namespace = namespace
 		}
 
-		err = c.Create(context.TODO(), new)
+		key := types.NamespacedName{
+			Name:      p.Name,
+			Namespace: p.Namespace,
+		}
+
+		pipeline := &v1alpha1.Pipeline{}
+		err = c.Get(context.TODO(), key, pipeline)
+		if err != nil {
+			if !apierrors.IsNotFound(err) {
+				return err
+			}
+
+			err = c.Create(context.TODO(), p)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("pipeline \"%s\" created\n", p.Name)
+
+			return nil
+		}
+
+		pipeline.ObjectMeta.Labels = p.ObjectMeta.Labels
+		pipeline.ObjectMeta.Annotations = p.ObjectMeta.Annotations
+		pipeline.Spec = p.Spec
+
+		err = c.Update(context.TODO(), pipeline)
 		if err != nil {
 			return err
 		}
 
-		fmt.Printf("Pipeline \"%s\" created\n", new.Name)
-
-		return nil
+		fmt.Printf("pipeline \"%s\" configured\n", pipeline.Name)
 	}
-
-	p := pipeline.DeepCopy()
-	p.ObjectMeta.Labels = new.ObjectMeta.Labels
-	p.ObjectMeta.Annotations = new.ObjectMeta.Annotations
-	p.Spec = new.Spec
-
-	err = c.Update(context.TODO(), p)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("Pipeline \"%s\" configured\n", p.Name)
 
 	return nil
 }

@@ -27,6 +27,7 @@ func NewPipelinesDeleteCommand() *cobra.Command {
 func pipelinesDeleteRun(cmd *cobra.Command, args []string) error {
 	var (
 		name string
+		keys []types.NamespacedName
 	)
 
 	flags := cmd.Flags()
@@ -48,30 +49,42 @@ func pipelinesDeleteRun(cmd *cobra.Command, args []string) error {
 	}
 
 	if f != "" {
-		p, err := loadPipelineFromFile(f)
+		pipelines, err := loadPipelinesFromFile(f)
 		if err != nil {
 			return err
 		}
-		name = p.Name
+
+		for _, p := range pipelines {
+			keys = append(keys, types.NamespacedName{
+				Name:      p.Name,
+				Namespace: p.Namespace,
+			})
+		}
+	} else {
+		keys = append(keys, types.NamespacedName{
+			Name:      name,
+			Namespace: namespace,
+		})
 	}
 
-	key := types.NamespacedName{
-		Name:      name,
-		Namespace: namespace,
-	}
+	for _, key := range keys {
+		if key.Namespace == "" {
+			key.Namespace = namespace
+		}
 
-	pipeline := v1alpha1.Pipeline{}
-	err = c.Get(context.TODO(), key, &pipeline)
-	if err != nil {
-		return err
-	}
+		pipeline := v1alpha1.Pipeline{}
+		err = c.Get(context.TODO(), key, &pipeline)
+		if err != nil {
+			return err
+		}
 
-	err = c.Delete(context.TODO(), &pipeline)
-	if err != nil {
-		return err
-	}
+		err = c.Delete(context.TODO(), &pipeline)
+		if err != nil {
+			return err
+		}
 
-	fmt.Printf("Pipeline \"%s\" deleted\n", pipeline.Name)
+		fmt.Printf("pipeline \"%s\" deleted\n", pipeline.Name)
+	}
 
 	return nil
 }
