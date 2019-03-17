@@ -240,11 +240,6 @@ func TestCompletionStatus(t *testing.T) {
 		Status:  corev1.ConditionFalse,
 		Message: "Failure",
 	}
-	unknownCond := &duckv1alpha1.Condition{
-		Type:    v1alpha1.BuildSucceeded,
-		Status:  corev1.ConditionUnknown,
-		Message: "Unknown",
-	}
 
 	var tests = []struct {
 		cond     *duckv1alpha1.Condition
@@ -253,7 +248,7 @@ func TestCompletionStatus(t *testing.T) {
 	}{
 		{successCond, 0, CompletionStatusSuccess},
 		{failureCond, 1, CompletionStatusFailure},
-		{unknownCond, 57, CompletionStatusUnknown},
+		{failureCond, ExitCodeNeutral, CompletionStatusNeutral},
 		{nil, 0, CompletionStatusUnknown},
 	}
 
