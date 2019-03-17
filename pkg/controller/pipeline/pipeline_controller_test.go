@@ -21,9 +21,11 @@ import (
 	"testing"
 	"time"
 
+	buildv1alpha1 "github.com/knative/build/pkg/apis/build/v1alpha1"
 	"github.com/onsi/gomega"
 	v1alpha1 "github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
 	"golang.org/x/net/context"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,7 +51,17 @@ func TestReconcile(t *testing.T) {
 		},
 	}
 
-	emptyTrigger := v1alpha1.PipelineTrigger{}
+	doubleTrigger := v1alpha1.PipelineTrigger{
+		Event: &v1alpha1.PipelineTriggerEvent{
+			Type:          "eventreactor.test",
+			SourcePattern: "/eventreactor/test/reconcile",
+		},
+		Pipeline: &v1alpha1.PipelineTriggerPipeline{
+			Name: "test-trigger",
+		},
+	}
+
+	noTrigger := v1alpha1.PipelineTrigger{}
 
 	var tests = []struct {
 		trigger          v1alpha1.PipelineTrigger
@@ -58,7 +70,8 @@ func TestReconcile(t *testing.T) {
 	}{
 		{eventTrigger, v1alpha1.TriggerTypeEvent, eventTrigger.Event.Type},
 		{pipelineTrigger, v1alpha1.TriggerTypePipeline, ""},
-		{emptyTrigger, "", ""},
+		{doubleTrigger, "", ""},
+		{noTrigger, "", ""},
 	}
 
 	g := gomega.NewGomegaWithT(t)
@@ -87,6 +100,15 @@ func TestReconcile(t *testing.T) {
 			},
 			Spec: v1alpha1.PipelineSpec{
 				Trigger: test.trigger,
+				BuildSpec: buildv1alpha1.BuildSpec{
+					Steps: []corev1.Container{
+						corev1.Container{
+							Name:  "hello",
+							Image: "ubuntu:18.04",
+							Args:  []string{"echo", "hello world"},
+						},
+					},
+				},
 			},
 		}
 

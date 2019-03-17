@@ -18,6 +18,7 @@ package pipeline
 
 import (
 	"context"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -103,6 +104,13 @@ func (r *ReconcilePipeline) Reconcile(request reconcile.Request) (reconcile.Resu
 		}
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
+	}
+
+	err = instance.Validate()
+	if err != nil {
+		r.log.Error(err, "Validation error", "pipeline", instance.Name)
+		r.recorder.Event(instance, "Warning", "Invalid", fmt.Sprintf("Validation error: %s", err.Error()))
+		return reconcile.Result{}, nil
 	}
 
 	pipeline := instance.DeepCopy()
