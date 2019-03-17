@@ -349,15 +349,19 @@ func TestStartPipelines(t *testing.T) {
 	// Valid for a1
 	p1 := newTestPipeline("valid1")
 	p1.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger] = v1alpha1.TriggerTypePipeline
-	p1.Spec.Trigger.Pipeline = &v1alpha1.PipelineTriggerPipeline{
-		Name: a1.Spec.Pipeline.Name,
+	p1.Spec.Trigger = v1alpha1.PipelineTrigger{
+		Pipeline: &v1alpha1.PipelineTriggerPipeline{
+			Name: a1.Spec.Pipeline.Name,
+		},
 	}
 
 	// Valid for a2
 	p2 := newTestPipeline("valid2")
 	p2.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger] = v1alpha1.TriggerTypePipeline
-	p2.Spec.Trigger.Pipeline = &v1alpha1.PipelineTriggerPipeline{
-		Name: a2.Spec.Pipeline.Name,
+	p2.Spec.Trigger = v1alpha1.PipelineTrigger{
+		Pipeline: &v1alpha1.PipelineTriggerPipeline{
+			Name: a2.Spec.Pipeline.Name,
+		},
 	}
 
 	// Trigger itself
@@ -416,7 +420,7 @@ func TestStartPipelines(t *testing.T) {
 	var tests = []struct {
 		action   *v1alpha1.Action
 		pipeline *v1alpha1.Pipeline
-		len      int
+		next     int
 	}{
 		{a1, p1, 2},
 		{a2, nil, 1},
@@ -443,14 +447,13 @@ func TestStartPipelines(t *testing.T) {
 		// Wait for reconcile request by Action creation
 		g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(req)))
 
-		// Get actions
+		// Get next actions
 		actionList := &v1alpha1.ActionList{}
 		opts := &client.ListOptions{Namespace: test.action.Namespace}
 		g.Expect(c.List(context.TODO(), opts, actionList)).NotTo(gomega.HaveOccurred())
 
-		fmt.Println(test, actionList.Items)
-		g.Expect(len(actionList.Items)).To(gomega.Equal(test.len))
-		if test.len > 1 {
+		g.Expect(len(actionList.Items)).To(gomega.Equal(test.next))
+		if test.next > 1 {
 			g.Expect(actionList.Items[1].Spec.Pipeline.Name).To(gomega.Equal(test.pipeline.Name))
 		}
 

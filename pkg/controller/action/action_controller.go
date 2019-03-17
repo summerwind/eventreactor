@@ -367,6 +367,13 @@ func (r *ReconcileAction) startPipelines(action *v1alpha1.Action) error {
 			continue
 		}
 
+		// Ignore if pipeline is invalid
+		err = pipeline.Validate()
+		if err != nil {
+			r.log.Info("Ignored with validation error", "pipeline", pipeline.Name, "error", err.Error())
+			continue
+		}
+
 		// Ignore if name is not matched
 		pn := pipeline.Spec.Trigger.Pipeline.Name
 		if pn != "" && pn != action.Spec.Pipeline.Name {
