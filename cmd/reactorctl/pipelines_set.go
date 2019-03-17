@@ -4,12 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"strings"
 
-	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 	"github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -42,39 +37,12 @@ func pipelinesSetRun(cmd *cobra.Command, args []string) error {
 		return errors.New("filename must be specified")
 	}
 
-	var buf []byte
-
-	switch {
-	case strings.HasPrefix(f, "http://") || strings.HasPrefix(f, "https://"):
-		res, err := http.Get(f)
-		if err != nil {
-			return err
-		}
-		defer res.Body.Close()
-
-		buf, err = ioutil.ReadAll(res.Body)
-		if err != nil {
-			return err
-		}
-	case f == "-":
-		buf, err = ioutil.ReadAll(os.Stdin)
-		if err != nil {
-			return err
-		}
-	default:
-		buf, err = ioutil.ReadFile(f)
-		if err != nil {
-			return err
-		}
-	}
-
-	new := v1alpha1.Pipeline{}
-	new.Namespace = namespace
-
-	err = yaml.Unmarshal(buf, &new)
+	new, err := loadPipelineFromFile(f)
 	if err != nil {
 		return err
 	}
+
+	new.Namespace = namespace
 
 	err = new.Validate()
 	if err != nil {
@@ -93,12 +61,12 @@ func pipelinesSetRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		err = c.Create(context.TODO(), &new)
+		err = c.Create(context.TODO(), new)
 		if err != nil {
 			return err
 		}
 
-		fmt.Println(new.Name)
+		fmt.Printf("Pipeline \"%s\" created\n", new.Name)
 
 		return nil
 	}
@@ -113,7 +81,7 @@ func pipelinesSetRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println(p.Name)
+	fmt.Printf("Pipeline \"%s\" configured\n", p.Name)
 
 	return nil
 }
