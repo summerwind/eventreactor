@@ -40,25 +40,13 @@ func loadPipelinesFromFile(f string) ([]*v1alpha1.Pipeline, error) {
 		defer res.Body.Close()
 
 		reader = res.Body
-		//buf, err = ioutil.ReadAll(res.Body)
-		//if err != nil {
-		//	return nil, err
-		//}
 	case f == "-":
 		reader = os.Stdin
-		//buf, err = ioutil.ReadAll(os.Stdin)
-		//if err != nil {
-		//	return nil, err
-		//}
 	default:
 		reader, err = os.Open(f)
 		if err != nil {
 			return nil, err
 		}
-		//buf, err = ioutil.ReadFile(f)
-		//if err != nil {
-		//	return nil, err
-		//}
 	}
 
 	decoder := yaml.NewYAMLOrJSONDecoder(reader, 4096)
