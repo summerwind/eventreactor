@@ -14,7 +14,7 @@ You need:
 Event Reactor uses Knative Build to run containers. So you need to install Kanative Build first.
 
 ```
-$ kubectl apply -f https://github.com/knative/build/releases/download/v0.4.0/build.yaml
+$ kubectl apply -f https://github.com/knative/build/releases/download/v0.5.0/build.yaml
 ```
 
 Next, install Event Reactor as follows. Please note that the Event Reactor will be installed in the *eventreactor* namespace.

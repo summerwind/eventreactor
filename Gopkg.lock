@@ -280,7 +280,7 @@
   version = "v1.1.5"
 
 [[projects]]
-  digest = "1:64ef47bd7ea071591e7af5967431c4827930690e2183b3c1b0d4f496f46e5bc4"
+  digest = "1:c5760bd75834b6debbe8ce905e12a0f2d0a1fc720ff476e5361cda95d148795f"
   name = "github.com/knative/build"
   packages = [
     "pkg/apis/build",
@@ -288,8 +288,8 @@
     "pkg/client/clientset/versioned/scheme",
   ]
   pruneopts = "T"
-  revision = "ee63efca9865c41732883f4eb0aef3be13becedd"
-  version = "v0.4.0"
+  revision = "4fc8663ff9c48a66c52684b2e4cdf06ec83117c8"
+  version = "v0.5.0"
 
 [[projects]]
   branch = "master"
@@ -1155,6 +1155,7 @@
     "k8s.io/apimachinery/pkg/runtime/schema",
     "k8s.io/apimachinery/pkg/types",
     "k8s.io/apimachinery/pkg/util/uuid",
+    "k8s.io/apimachinery/pkg/util/yaml",
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/scheme",
     "k8s.io/client-go/plugin/pkg/client/auth/azure",
