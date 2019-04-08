@@ -292,8 +292,7 @@
   version = "v0.5.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:4ea6957bbd486ab2be2e031577b54aa2f625bc9ac2d2dc08d30a57a240196874"
+  digest = "1:8436a9a05380616a32ffd21921e8a5fdb509ee015f7fc3b3900f83e4b8796181"
   name = "github.com/knative/pkg"
   packages = [
     "apis",
@@ -303,7 +302,7 @@
     "kmp",
   ]
   pruneopts = "T"
-  revision = "b8c4664801239c61edd10fdda423a6b7c5c3da81"
+  revision = "60fdcbcabd2faeb34328d8b2725dc76c59189453"
 
 [[projects]]
   digest = "1:3804a3a02964db8e6db3e5e7960ac1c1a9b12835642dd4f4ac4e56c749ec73eb"

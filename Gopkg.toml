@@ -45,6 +45,10 @@ version="v1.4.7"
   name = "github.com/knative/build"
   version = "v0.5.0"
 
+[[constraint]]
+  name = "github.com/knative/pkg"
+  revision = "60fdcbcabd2faeb34328d8b2725dc76c59189453"
+
 [[override]]
   name = "k8s.io/api"
   version = "kubernetes-1.13.1"
