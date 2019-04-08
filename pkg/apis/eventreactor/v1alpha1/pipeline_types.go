@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
 	"errors"
 
 	buildv1alpha1 "github.com/knative/build/pkg/apis/build/v1alpha1"
@@ -104,7 +105,7 @@ func (p Pipeline) Validate() error {
 		return err
 	}
 
-	fieldErr := p.Spec.BuildSpec.Validate()
+	fieldErr := p.Spec.BuildSpec.Validate(context.Background())
 	if fieldErr != nil {
 		return fieldErr
 	}
