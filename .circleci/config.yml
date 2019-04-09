@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  build:
+  test:
     docker:
     - image: summerwind/kubebuilder:latest
     working_directory: /go/src/github.com/summerwind/eventreactor
@@ -14,12 +14,9 @@ jobs:
     - run:
         name: Test
         command: make test
-    - run:
-        name: Build container
-        command: make docker-build
 
 workflows:
   version: 2
   main:
     jobs:
-    - build
+    - test
