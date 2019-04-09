@@ -45,11 +45,13 @@ func eventsListRun(cmd *cobra.Command, args []string) error {
 		selector[v1alpha1.KeyEventType] = eventType
 	}
 
-	opts := client.MatchingLabels(selector)
-	opts.Namespace = namespace
+	opts := []client.ListOptionFunc{
+		client.InNamespace(namespace),
+		client.MatchingLabels(selector),
+	}
 
 	eventList := &v1alpha1.EventList{}
-	err = c.List(context.TODO(), opts, eventList)
+	err = c.List(context.TODO(), eventList, opts...)
 	if err != nil {
 		return err
 	}
@@ -68,14 +70,14 @@ func eventsListRun(cmd *cobra.Command, args []string) error {
 	events := eventList.Items[start:]
 
 	writer := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
-	fmt.Fprintln(writer, "NAME\tTYPE\tDATE")
+	fmt.Fprintln(writer, "NAME\tTYPE\tSOURCE\tDATE")
 
 	for i, ev := range events {
 		if i >= limit {
 			break
 		}
 		date := ev.Spec.Time.Format("2006-01-02 15:04:05")
-		fmt.Fprintf(writer, "%s\t%s\t%s\n", ev.Name, ev.Spec.Type, date)
+		fmt.Fprintf(writer, "%s\t%s\t%s\t%s\n", ev.Name, ev.Spec.Type, ev.Spec.Source, date)
 	}
 	writer.Flush()
 

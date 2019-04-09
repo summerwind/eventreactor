@@ -449,8 +449,10 @@ func TestStartPipelines(t *testing.T) {
 
 		// Get next actions
 		actionList := &v1alpha1.ActionList{}
-		opts := &client.ListOptions{Namespace: test.action.Namespace}
-		g.Expect(c.List(context.TODO(), opts, actionList)).NotTo(gomega.HaveOccurred())
+		opts := []client.ListOptionFunc{
+			client.InNamespace(test.action.Namespace),
+		}
+		g.Expect(c.List(context.TODO(), actionList, opts...)).NotTo(gomega.HaveOccurred())
 
 		g.Expect(len(actionList.Items)).To(gomega.Equal(test.next))
 		if test.next > 1 {

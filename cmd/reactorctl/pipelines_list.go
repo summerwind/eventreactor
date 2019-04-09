@@ -40,11 +40,13 @@ func pipelinesListRun(cmd *cobra.Command, args []string) error {
 		selector[v1alpha1.KeyEventType] = eventType
 	}
 
-	opts := client.MatchingLabels(selector)
-	opts.Namespace = namespace
+	opts := []client.ListOptionFunc{
+		client.InNamespace(namespace),
+		client.MatchingLabels(selector),
+	}
 
 	pipelineList := &v1alpha1.PipelineList{}
-	err = c.List(context.TODO(), opts, pipelineList)
+	err = c.List(context.TODO(), pipelineList, opts...)
 	if err != nil {
 		return err
 	}

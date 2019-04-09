@@ -79,7 +79,7 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileAction{
 		Client:   mgr.GetClient(),
 		scheme:   mgr.GetScheme(),
-		recorder: mgr.GetRecorder(ControllerName),
+		recorder: mgr.GetEventRecorderFor(ControllerName),
 		log:      logf.Log.WithName(ControllerName),
 		api:      kubernetes.NewForConfigOrDie(mgr.GetConfig()),
 	}
@@ -347,11 +347,13 @@ func (r *ReconcileAction) startPipelines(action *v1alpha1.Action) error {
 		v1alpha1.KeyPipelineTrigger: v1alpha1.TriggerTypePipeline,
 	}
 
-	opts := &client.ListOptions{Namespace: action.Namespace}
-	opts = opts.MatchingLabels(pipelineLabels)
+	opts := []client.ListOptionFunc{
+		client.InNamespace(action.Namespace),
+		client.MatchingLabels(pipelineLabels),
+	}
 
 	pipelineList := &v1alpha1.PipelineList{}
-	err := r.List(context.TODO(), opts, pipelineList)
+	err := r.List(context.TODO(), pipelineList, opts...)
 	if err != nil {
 		return err
 	}

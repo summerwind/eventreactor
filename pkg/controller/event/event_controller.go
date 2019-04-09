@@ -53,7 +53,7 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileEvent{
 		Client:   mgr.GetClient(),
 		scheme:   mgr.GetScheme(),
-		recorder: mgr.GetRecorder(ControllerName),
+		recorder: mgr.GetEventRecorderFor(ControllerName),
 		log:      logf.Log.WithName(ControllerName),
 	}
 }
@@ -115,10 +115,12 @@ func (r *ReconcileEvent) Reconcile(request reconcile.Request) (reconcile.Result,
 	labels := map[string]string{}
 	labels[v1alpha1.KeyEventType] = instance.Spec.Type
 
-	opts := &client.ListOptions{Namespace: instance.Namespace}
-	opts = opts.MatchingLabels(labels)
+	opts := []client.ListOptionFunc{
+		client.InNamespace(instance.Namespace),
+		client.MatchingLabels(labels),
+	}
 
-	err = r.List(context.TODO(), opts, pipelineList)
+	err = r.List(context.TODO(), pipelineList, opts...)
 	if err != nil {
 		// Error reading pipelines. Requeue the request.
 		return reconcile.Result{}, err

@@ -53,11 +53,13 @@ func actionsListRun(cmd *cobra.Command, args []string) error {
 		selector[v1alpha1.KeyEventName] = eventName
 	}
 
-	opts := client.MatchingLabels(selector)
-	opts.Namespace = namespace
+	opts := []client.ListOptionFunc{
+		client.InNamespace(namespace),
+		client.MatchingLabels(selector),
+	}
 
 	actionList := &v1alpha1.ActionList{}
-	err = c.List(context.TODO(), opts, actionList)
+	err = c.List(context.TODO(), actionList, opts...)
 	if err != nil {
 		return err
 	}
@@ -77,7 +79,7 @@ func actionsListRun(cmd *cobra.Command, args []string) error {
 	actions := actionList.Items[start:]
 
 	writer := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
-	fmt.Fprintln(writer, "NAME\tPIPELINE\tEVENT\tSTATUS\tDATE")
+	fmt.Fprintln(writer, "NAME\tPIPELINE\tEVENT\tEVENT TYPE\tSTATUS\tDATE")
 
 	for i, a := range actions {
 		if i >= limit {
@@ -102,7 +104,7 @@ func actionsListRun(cmd *cobra.Command, args []string) error {
 		}
 
 		date := a.ObjectMeta.CreationTimestamp.Format("2006-01-02 15:04:05")
-		fmt.Fprintf(writer, "%s\t%s\t%s\t%s\t%s\n", a.Name, a.Spec.Pipeline.Name, a.Spec.Event.Name, status, date)
+		fmt.Fprintf(writer, "%s\t%s\t%s\t%s\t%s\t%s\n", a.Name, a.Spec.Pipeline.Name, a.Spec.Event.Name, a.Spec.Event.Type, status, date)
 	}
 	writer.Flush()
 

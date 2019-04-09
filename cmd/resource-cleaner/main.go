@@ -32,9 +32,11 @@ var (
 
 func cleanupEvent() error {
 	eventList := &v1alpha1.EventList{}
-	opts := &client.ListOptions{Namespace: namespace}
+	opts := []client.ListOptionFunc{
+		client.InNamespace(namespace),
+	}
 
-	err := c.List(context.TODO(), opts, eventList)
+	err := c.List(context.TODO(), eventList, opts...)
 	if err != nil {
 		return err
 	}
@@ -70,9 +72,11 @@ func cleanupEvent() error {
 
 func cleanupAction() error {
 	actionList := &v1alpha1.ActionList{}
-	opts := &client.ListOptions{Namespace: namespace}
+	opts := []client.ListOptionFunc{
+		client.InNamespace(namespace),
+	}
 
-	err := c.List(context.TODO(), opts, actionList)
+	err := c.List(context.TODO(), actionList, opts...)
 	if err != nil {
 		return err
 	}

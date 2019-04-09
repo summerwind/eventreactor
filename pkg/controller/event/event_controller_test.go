@@ -138,10 +138,13 @@ func TestReconcile(t *testing.T) {
 	labels := map[string]string{
 		v1alpha1.KeyEventName: instance.Name,
 	}
-	opts := &client.ListOptions{Namespace: instance.Namespace}
-	opts = opts.MatchingLabels(labels)
 
-	g.Expect(c.List(context.TODO(), opts, actionList)).To(gomega.Succeed())
+	opts := []client.ListOptionFunc{
+		client.InNamespace(instance.Namespace),
+		client.MatchingLabels(labels),
+	}
+
+	g.Expect(c.List(context.TODO(), actionList, opts...)).To(gomega.Succeed())
 	g.Expect(len(actionList.Items)).To(gomega.Equal(1))
 
 	// Test the value of action

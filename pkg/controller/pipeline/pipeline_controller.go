@@ -50,7 +50,7 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcilePipeline{
 		Client:   mgr.GetClient(),
 		scheme:   mgr.GetScheme(),
-		recorder: mgr.GetRecorder(ControllerName),
+		recorder: mgr.GetEventRecorderFor(ControllerName),
 		log:      logf.Log.WithName(ControllerName),
 	}
 }
