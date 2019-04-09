@@ -33,8 +33,7 @@ deploy: manifests
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests:
-	go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go crd
-	go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go rbac --name eventreactor-controller
+	go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go all
 
 # Run go fmt against code
 fmt:
