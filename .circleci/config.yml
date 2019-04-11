@@ -4,13 +4,12 @@ jobs:
     docker:
     - image: summerwind/kubebuilder:latest
     working_directory: /go/src/github.com/summerwind/eventreactor
+    environment:
+      GO111MODULE: "on"
     steps:
     - checkout
     - setup_remote_docker:
         version: 18.09.3
-    - run:
-        name: Vendor
-        command: make vendor
     - run:
         name: Test
         command: make test
