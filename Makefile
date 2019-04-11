@@ -33,7 +33,7 @@ deploy: manifests
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests:
-	go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go all
+	controller-gen all
 
 # Run go fmt against code
 fmt:
@@ -65,10 +65,6 @@ docker-push-release:
 # Build release assets
 release:
 	hack/release.sh $(VERSION)
-
-# Create vendor
-vendor:
-	dep ensure -v
 
 # Cleanup
 clean:
