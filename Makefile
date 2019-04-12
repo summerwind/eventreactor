@@ -48,7 +48,7 @@ generate:
 	go generate ./pkg/... ./cmd/...
 
 # Build the docker image
-docker-build: test
+docker-build:
 	docker build --target eventreactor -t summerwind/eventreactor:latest -t summerwind/eventreactor:$(VERSION) .
 	docker build --target event-init -t summerwind/event-init:latest -t summerwind/event-init:$(VERSION) .
 
