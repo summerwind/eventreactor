@@ -14,7 +14,7 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc // indirect
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
-	github.com/knative/build v0.5.0
+	github.com/knative/build v0.6.0
 	github.com/knative/pkg v0.0.0-20190321174848-60fdcbcabd2f
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
 	github.com/oklog/ulid v1.3.1
