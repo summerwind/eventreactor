@@ -10,7 +10,6 @@ test: generate fmt vet manifests
 binary: generate fmt vet
 	CGO_ENABLED=0 go build -o bin/manager github.com/summerwind/eventreactor/cmd/manager
 	CGO_ENABLED=0 go build -o bin/eventlet github.com/summerwind/eventreactor/cmd/eventlet
-	CGO_ENABLED=0 go build -o bin/event-receiver github.com/summerwind/eventreactor/cmd/event-receiver
 	CGO_ENABLED=0 go build -o bin/event-init github.com/summerwind/eventreactor/cmd/event-init
 	CGO_ENABLED=0 go build -o bin/reactorctl github.com/summerwind/eventreactor/cmd/reactorctl
 
