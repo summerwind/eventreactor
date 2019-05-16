@@ -9,6 +9,7 @@ test: generate fmt vet manifests
 # Build binary
 binary: generate fmt vet
 	CGO_ENABLED=0 go build -o bin/manager github.com/summerwind/eventreactor/cmd/manager
+	CGO_ENABLED=0 go build -o bin/eventlet github.com/summerwind/eventreactor/cmd/eventlet
 	CGO_ENABLED=0 go build -o bin/event-receiver github.com/summerwind/eventreactor/cmd/event-receiver
 	CGO_ENABLED=0 go build -o bin/resource-cleaner github.com/summerwind/eventreactor/cmd/resource-cleaner
 	CGO_ENABLED=0 go build -o bin/event-init github.com/summerwind/eventreactor/cmd/event-init
@@ -18,9 +19,9 @@ binary: generate fmt vet
 manager: generate fmt vet
 	go run ./cmd/manager/main.go
 
-# Run apiserver against the configured Kubernetes cluster in ~/.kube/config
-event-receiver: generate fmt vet
-	go run ./cmd/event-receiver/main.go
+# Run eventlet against the configured Kubernetes cluster in ~/.kube/config
+eventlet: generate fmt vet
+	go run ./cmd/eventlet/main.go
 
 # Install CRDs into a cluster
 install: manifests

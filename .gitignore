@@ -30,5 +30,6 @@ release
 # Do not keep binary
 cmd/manager/manager
 cmd/event-receiver/event-receiver
+cmd/eventlet/eventlet
 cmd/resource-cleaner/resource-cleaner
 cmd/reactorctl/reactorctl
