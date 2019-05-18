@@ -26,6 +26,7 @@ RUN go get k8s.io/code-generator/cmd/deepcopy-gen \
 COPY . /workspace
 WORKDIR /workspace
 
+RUN make test
 RUN make binary
 
 #################################################

@@ -2,17 +2,14 @@ version: 2
 jobs:
   test:
     docker:
-    - image: summerwind/kubebuilder:latest
-    working_directory: /go/src/github.com/summerwind/eventreactor
-    environment:
-      GO111MODULE: "on"
+    - image: summerwind/toolbox:latest
     steps:
     - checkout
     - setup_remote_docker:
         version: 18.09.3
     - run:
-        name: Test
-        command: make test
+        name: Build container
+        command: make docker-build
 
 workflows:
   version: 2
