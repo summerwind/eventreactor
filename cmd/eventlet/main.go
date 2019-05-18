@@ -200,7 +200,7 @@ func cleanupEvents() error {
 	}
 
 	keepStart := 0
-	eventLen := len(actionList.Items)
+	eventLen := len(eventList.Items)
 	if eventLen >= eventCount {
 		keepStart = eventLen - eventCount
 	}
