@@ -46,18 +46,22 @@ vet:
 generate:
 	go generate ./pkg/... ./cmd/...
 
+# Run tests in the container
+test-container:
+	docker build --target test .
+
 # Build the docker image
-docker-build:
+build-container:
 	docker build --target eventreactor -t summerwind/eventreactor:latest -t summerwind/eventreactor:$(VERSION) .
 	docker build --target event-init -t summerwind/event-init:latest -t summerwind/event-init:$(VERSION) .
 
 # Push the latest image
-docker-push:
+push-container:
 	docker push summerwind/eventreactor:latest
 	docker push summerwind/event-init:latest
 
 # Push the release image
-docker-push-release:
+push-release-container:
 	docker push summerwind/eventreactor:$(VERSION)
 	docker push summerwind/event-init:$(VERSION)
 

@@ -1,4 +1,4 @@
-FROM golang:1.12 AS builder
+FROM golang:1.12 AS base
 
 ENV KUBEBUILDER_VERSION=1.0.8 \
     KUSTOMIZE_VERSION=2.0.1
@@ -23,17 +23,25 @@ RUN go get sigs.k8s.io/controller-tools/cmd/controller-gen \
 RUN go get k8s.io/code-generator/cmd/deepcopy-gen \
   && install -o root -g root -m 755 ${GOPATH}/bin/deepcopy-gen /usr/local/bin/deepcopy-gen
 
-COPY . /workspace
-WORKDIR /workspace
+COPY . .
+
+#################################################
+
+FROM base as test
 
 RUN make test
+
+#################################################
+
+FROM base as build
+
 RUN make binary
 
 #################################################
 
 FROM scratch as eventreactor
 
-COPY --from=builder /workspace/bin/* /bin/
+COPY --from=build /go/src/github.com/summerwind/eventreactor/bin/* /bin/
 
 ENTRYPOINT ["/bin/manager"]
 
@@ -41,6 +49,6 @@ ENTRYPOINT ["/bin/manager"]
 
 FROM scratch as event-init
 
-COPY --from=builder /workspace/bin/event-init /bin/
+COPY --from=build /go/src/github.com/summerwind/eventreactor/bin/event-init /bin/
 
 ENTRYPOINT ["/bin/event-init"]
