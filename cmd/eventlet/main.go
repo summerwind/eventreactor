@@ -358,9 +358,9 @@ func main() {
 	cmd.Flags().StringVar(&certFile, "tls-cert-file", "", "File containing the default x509 Certificate for HTTPS")
 	cmd.Flags().StringVar(&keyFile, "tls-private-key-file", "", "File containing the default x509 private key matching --tls-cert-file")
 	cmd.Flags().DurationVar(&eventPeriod, "event-retention-period", time.Duration(0), "Retention period of events")
-	cmd.Flags().IntVar(&eventCount, "event-retention-count", 100, "The maximum number of events to keep")
+	cmd.Flags().IntVar(&eventCount, "event-retention-count", 0, "The maximum number of events to keep")
 	cmd.Flags().DurationVar(&actionPeriod, "action-retention-period", time.Duration(0), "Retention period of actions")
-	cmd.Flags().IntVar(&actionCount, "action-retention-count", 100, "The maximum number of actions to keep")
+	cmd.Flags().IntVar(&actionCount, "action-retention-count", 0, "The maximum number of actions to keep")
 
 	err := cmd.Execute()
 	if err != nil {
