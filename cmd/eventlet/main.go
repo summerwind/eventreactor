@@ -199,9 +199,10 @@ func cleanupEvents() error {
 		return err
 	}
 
-	keepStart := len(eventList.Items)
-	if keepStart >= eventCount {
-		keepStart -= eventCount
+	keepStart := 0
+	eventLen := len(actionList.Items)
+	if eventLen >= eventCount {
+		keepStart = eventLen - eventCount
 	}
 
 	for i, event := range eventList.Items {
@@ -239,9 +240,10 @@ func cleanupActions() error {
 		return err
 	}
 
-	keepStart := len(actionList.Items)
-	if keepStart >= actionCount {
-		keepStart -= actionCount
+	keepStart := 0
+	actionLen := len(actionList.Items)
+	if actionLen >= actionCount {
+		keepStart = actionLen - actionCount
 	}
 
 	for i, action := range actionList.Items {
@@ -305,7 +307,7 @@ func run(cmd *cobra.Command, args []string) error {
 		}
 	}()
 
-	gcTicker := time.NewTicker(time.Duration(10) * time.Minute)
+	gcTicker := time.NewTicker(time.Duration(10) * time.Second)
 	defer gcTicker.Stop()
 
 	go func() {
