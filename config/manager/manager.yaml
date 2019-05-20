@@ -30,6 +30,11 @@ spec:
         imagePullPolicy: Always
         command: ["/bin/manager"]
         args: ["-event-image", "summerwind/event-init:latest"]
+        volumeMounts:
+        - name: secret-volume
+          mountPath: /etc/tls
+        ports:
+        - containerPort: 14389
         resources:
           requests:
             cpu: 100m
@@ -37,5 +42,22 @@ spec:
           limits:
             cpu: 100m
             memory: 30Mi
+      volumes:
+      - name: secret-volume
+        secret:
+          secretName: eventreactor-controller
       serviceAccountName: eventreactor-controller
       terminationGracePeriodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eventreactor-controller
+  namespace: eventreactor
+spec:
+  selector:
+    app: eventreactor-controller
+  ports:
+  - protocol: TCP
+    port: 443
+    targetPort: 14389

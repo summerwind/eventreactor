@@ -1,0 +1,23 @@
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: eventreactor
+webhooks:
+- name: eventreactor.summerwind.github.io
+  rules:
+  - apiGroups:
+    - eventreactor.summerwind.github.io
+    apiVersions:
+    - v1alpha1
+    resources:
+    - pipelines
+    operations:
+    - CREATE
+    - UPDATE
+  failurePolicy: Fail
+  clientConfig:
+    service:
+      name: eventreactor-controller
+      namespace: eventreactor
+      path: /v1alpha1/pipeline/validate
+    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJ4akNDQVd5Z0F3SUJBZ0lVZTFmS0xXcmxSTlhUVUg4VnNqZnZEQzdZMFdVd0NnWUlLb1pJemowRUF3SXcKUVRFT01Bd0dBMVVFQmhNRlNtRndZVzR4RGpBTUJnTlZCQWdUQlZSdmEzbHZNUjh3SFFZRFZRUURFeFpGZG1WdQpkRkpsWVdOMGIzSWdMU0JTYjI5MElFTkJNQjRYRFRFNU1EVXhPVEUwTXpRd01Gb1hEVEkwTURVeE56RTBNelF3Ck1Gb3dRVEVPTUF3R0ExVUVCaE1GU21Gd1lXNHhEakFNQmdOVkJBZ1RCVlJ2YTNsdk1SOHdIUVlEVlFRREV4WkYKZG1WdWRGSmxZV04wYjNJZ0xTQlNiMjkwSUVOQk1Ga3dFd1lIS29aSXpqMENBUVlJS29aSXpqMERBUWNEUWdBRQppQUNzLzFlYnFTK0JEbWtjVUNxRzhUbE5ON3l2NEhUM1hoNjVIb0I5dlFVSHFXQlIzU1NjNEx0V0VYRng3MXpmCnluV1R5Mm53ZXdGTG9BS0UzRUdQYjZOQ01FQXdEZ1lEVlIwUEFRSC9CQVFEQWdFR01BOEdBMVVkRXdFQi93UUYKTUFNQkFmOHdIUVlEVlIwT0JCWUVGTklFWlpMeEEydjJzVy9UcE5KVXZYTXJPSXl4TUFvR0NDcUdTTTQ5QkFNQwpBMGdBTUVVQ0lRQ1NIYitXd2lCNW9GNGtBQndaSW5LN2VHY3psZE5leHozbmVPQ0dmVnNObHdJZ0RZUENyTWZlClI3V2VrVUVZVFpkR1JyOE5tM0lCekY1b0pXN1hiWW9DeFhFPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==

@@ -21,6 +21,13 @@ bin
 *.swo
 *~
 
+# Operating system metadata
+.DS_Store
+
+# Do not keep certificate files
+*.csr
+*.pem
+
 # Do not keep vendor
 vendor
 

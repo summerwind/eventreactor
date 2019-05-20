@@ -1,2 +1,12 @@
 resources:
 - manager.yaml
+- webhook.yaml
+
+secretGenerator:
+- name: eventreactor-controller
+  namespace: eventreactor
+  type: Opaque
+  files:
+  - tls.crt=tls/server.pem
+  - tls.key=tls/server-key.pem
+  - ca-bundle=tls/ca.pem
