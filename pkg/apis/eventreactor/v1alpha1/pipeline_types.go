@@ -19,6 +19,8 @@ package v1alpha1
 import (
 	"context"
 	"errors"
+	"fmt"
+	"regexp"
 
 	buildv1alpha1 "github.com/knative/build/pkg/apis/build/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,6 +39,32 @@ type PipelineTriggerEvent struct {
 	SourcePattern string `json:"sourcePattern"`
 }
 
+// Validate returns error when its field values are invalid.
+func (p *PipelineTriggerEvent) Validate() error {
+	if p.Type == "" {
+		return errors.New("type must be specified")
+	}
+
+	if len(p.Type) > 63 {
+		return errors.New("type is too long")
+	}
+
+	matched, err := regexp.MatchString(`^[a-z0-9A-Z\-_.]+$`, p.Type)
+	if err != nil {
+		return fmt.Errorf("invalid type pattern: %v", err)
+	}
+	if !matched {
+		return errors.New("invalid type")
+	}
+
+	_, err = regexp.Compile(p.SourcePattern)
+	if err != nil {
+		return fmt.Errorf("invalid source pattern: %v", err)
+	}
+
+	return nil
+}
+
 // PipelineTriggerPipeline defines the condition of the pipeline to execute
 // pipeline.
 type PipelineTriggerPipeline struct {
@@ -52,6 +80,26 @@ type PipelineTriggerPipeline struct {
 	Status CompletionStatus `json:"status,omitempty"`
 }
 
+// Validate returns error when its field values are invalid.
+func (p *PipelineTriggerPipeline) Validate() error {
+	switch p.Status {
+	case "":
+		// Valid
+	case CompletionStatusSuccess:
+		// Valid
+	case CompletionStatusFailure:
+		// Valid
+	case CompletionStatusNeutral:
+		// Valid
+	case CompletionStatusUnknown:
+		// Valid
+	default:
+		return fmt.Errorf("invalid pipeline status: %v", p.Status)
+	}
+
+	return nil
+}
+
 // PipelineTrigger defines the cause of pipeline execution.
 type PipelineTrigger struct {
 	// Event contains the condition of the event to execute pipeline.
@@ -61,13 +109,27 @@ type PipelineTrigger struct {
 }
 
 // Validate returns error when its field values are invalid.
-func (pt PipelineTrigger) Validate() error {
-	if pt.Event == nil && pt.Pipeline == nil {
-		return errors.New("Trigger must be specified")
+func (p *PipelineTrigger) Validate() error {
+	if p.Event == nil && p.Pipeline == nil {
+		return errors.New("trigger must be specified")
 	}
 
-	if pt.Event != nil && pt.Pipeline != nil {
-		return errors.New("Trigger must be exactly one")
+	if p.Event != nil && p.Pipeline != nil {
+		return errors.New("trigger must be exactly one")
+	}
+
+	if p.Event != nil {
+		err := p.Event.Validate()
+		if err != nil {
+			return err
+		}
+	}
+
+	if p.Pipeline != nil {
+		err := p.Pipeline.Validate()
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -79,6 +141,21 @@ type PipelineSpec struct {
 
 	// Trigger specifies the trigger of the Pipeline.
 	Trigger PipelineTrigger `json:"trigger"`
+}
+
+// Validate returns error when its field values are invalid.
+func (p *PipelineSpec) Validate() error {
+	err := p.Trigger.Validate()
+	if err != nil {
+		return err
+	}
+
+	fieldErr := p.BuildSpec.Validate(context.Background())
+	if fieldErr != nil {
+		return fieldErr
+	}
+
+	return nil
 }
 
 // PipelineStatus defines the observed state of Pipeline.
@@ -99,18 +176,8 @@ type Pipeline struct {
 }
 
 // Validate returns error when its field values are invalid.
-func (p Pipeline) Validate() error {
-	err := p.Spec.Trigger.Validate()
-	if err != nil {
-		return err
-	}
-
-	fieldErr := p.Spec.BuildSpec.Validate(context.Background())
-	if fieldErr != nil {
-		return fieldErr
-	}
-
-	return nil
+func (p *Pipeline) Validate() error {
+	return p.Spec.Validate()
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
