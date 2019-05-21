@@ -34,6 +34,7 @@ func init() {
 		}
 
 		server.Register("/validate", &webhook.Admission{Handler: &Validator{}})
+		server.Register("/mutate", &webhook.Admission{Handler: &Mutator{}})
 
 		return mgr.Add(server)
 	})
