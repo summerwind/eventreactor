@@ -36,6 +36,8 @@ func (m *Mutator) Handle(ctx context.Context, req admission.Request) admission.R
 	switch req.Kind.Kind {
 	case "Pipeline":
 		res = m.mutatePipeline(req)
+	case "Event":
+		res = m.mutateEvent(req)
 	default:
 		res = admission.Errored(http.StatusBadRequest, errors.New("unexpected resource"))
 	}
@@ -83,4 +85,26 @@ func (m *Mutator) mutatePipeline(req admission.Request) admission.Response {
 	}
 
 	return admission.PatchResponseFromRaw(req.Object.Raw, p)
+}
+
+func (m *Mutator) mutateEvent(req admission.Request) admission.Response {
+	event := &v1alpha1.Event{}
+
+	err := m.decoder.Decode(req, event)
+	if err != nil {
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	if event.ObjectMeta.Labels == nil {
+		event.ObjectMeta.Labels = map[string]string{}
+	}
+
+	event.ObjectMeta.Labels[v1alpha1.KeyEventType] = event.Spec.Type
+
+	ev, err := json.Marshal(event)
+	if err != nil {
+		return admission.Errored(http.StatusInternalServerError, err)
+	}
+
+	return admission.PatchResponseFromRaw(req.Object.Raw, ev)
 }

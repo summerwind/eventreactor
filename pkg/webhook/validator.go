@@ -35,6 +35,8 @@ func (v *Validator) Handle(ctx context.Context, req admission.Request) admission
 	switch req.Kind.Kind {
 	case "Pipeline":
 		res = v.validatePipeline(req)
+	case "Event":
+		res = v.validateEvent(req)
 	default:
 		res = admission.Errored(http.StatusBadRequest, errors.New("unexpected resource"))
 	}
@@ -56,6 +58,22 @@ func (v *Validator) validatePipeline(req admission.Request) admission.Response {
 	}
 
 	err = pipeline.Validate()
+	if err != nil {
+		return admission.Denied(err.Error())
+	}
+
+	return admission.Allowed("")
+}
+
+func (v *Validator) validateEvent(req admission.Request) admission.Response {
+	event := &v1alpha1.Event{}
+
+	err := v.decoder.Decode(req, event)
+	if err != nil {
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	err = event.Validate()
 	if err != nil {
 		return admission.Denied(err.Error())
 	}

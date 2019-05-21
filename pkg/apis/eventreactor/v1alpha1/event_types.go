@@ -17,6 +17,10 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"errors"
+	"fmt"
+	"regexp"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -49,6 +53,34 @@ type EventSpec struct {
 	Data string `json:"data,omitempty"`
 }
 
+func (e *EventSpec) Validate() error {
+	if e.Type == "" {
+		return errors.New("type must be specified")
+	}
+
+	if len(e.Type) > 63 {
+		return errors.New("type is too long")
+	}
+
+	matched, err := regexp.MatchString(`^[a-z0-9A-Z\-_.]+$`, e.Type)
+	if err != nil {
+		return fmt.Errorf("invalid type pattern: %v", err)
+	}
+	if !matched {
+		return errors.New("invalid type")
+	}
+
+	if e.Source == "" {
+		return errors.New("source must be specified")
+	}
+
+	if e.ID == "" {
+		return errors.New("id must be specified")
+	}
+
+	return nil
+}
+
 // EventStatus defines the observed state of Event.
 type EventStatus struct {
 	// DispatchTime specifies the time of handled the event by ontroller.
@@ -66,6 +98,11 @@ type Event struct {
 
 	Spec   EventSpec   `json:"spec,omitempty"`
 	Status EventStatus `json:"status,omitempty"`
+}
+
+// Validate returns error when its field values are invalid.
+func (e *Event) Validate() error {
+	return e.Spec.Validate()
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
