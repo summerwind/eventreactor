@@ -33,7 +33,7 @@ func init() {
 			CertDir: "/etc/tls",
 		}
 
-		server.Register("/v1alpha1/pipeline/validate", &webhook.Admission{Handler: &PipelineValidator{}})
+		server.Register("/validate", &webhook.Admission{Handler: &Validator{}})
 
 		return mgr.Add(server)
 	})

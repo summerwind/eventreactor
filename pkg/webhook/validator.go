@@ -18,17 +18,36 @@ package webhook
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/summerwind/eventreactor/pkg/apis/eventreactor/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-type PipelineValidator struct {
+type Validator struct {
 	decoder *admission.Decoder
 }
 
-func (v *PipelineValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (v *Validator) Handle(ctx context.Context, req admission.Request) admission.Response {
+	var res admission.Response
+
+	switch req.Kind.Kind {
+	case "Pipeline":
+		res = v.validatePipeline(req)
+	default:
+		res = admission.Errored(http.StatusBadRequest, errors.New("unexpected resource"))
+	}
+
+	return res
+}
+
+func (v *Validator) InjectDecoder(d *admission.Decoder) error {
+	v.decoder = d
+	return nil
+}
+
+func (v *Validator) validatePipeline(req admission.Request) admission.Response {
 	pipeline := &v1alpha1.Pipeline{}
 
 	err := v.decoder.Decode(req, pipeline)
@@ -42,9 +61,4 @@ func (v *PipelineValidator) Handle(ctx context.Context, req admission.Request) a
 	}
 
 	return admission.Allowed("")
-}
-
-func (v *PipelineValidator) InjectDecoder(d *admission.Decoder) error {
-	v.decoder = d
-	return nil
 }
