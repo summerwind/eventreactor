@@ -75,6 +75,8 @@ func (m *Mutator) mutatePipeline(req admission.Request) admission.Response {
 		return admission.Errored(http.StatusInternalServerError, errors.New("invalid trigger"))
 	}
 
+	pipeline.ObjectMeta.Labels[v1alpha1.KeyPipelineTrigger] = trigger
+
 	p, err := json.Marshal(pipeline)
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
