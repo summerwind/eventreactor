@@ -41,9 +41,6 @@ type ActionSpecEvent struct {
 	Name string `json:"name"`
 
 	// Source is the type of event.
-	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:validation:MaxLength=63
-	// +kubebuilder:validation:Pattern=^[a-z0-9A-Z\-_.]+$
 	Type string `json:"type"`
 
 	// Source is the source of event.
@@ -71,7 +68,6 @@ type ActionSpecUpstream struct {
 	Pipeline string `json:"pipeline"`
 
 	// Via is a list of upstream action names.
-	// +kubebuilder:validation:MaxItems=10
 	Via []string `json:"via,omitempty"`
 }
 

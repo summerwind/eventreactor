@@ -29,9 +29,6 @@ import (
 // PipelineTriggerEvent defines the condition of the event to execute pipeline.
 type PipelineTriggerEvent struct {
 	// Type specifies the type of event.
-	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:validation:MaxLength=63
-	// +kubebuilder:validation:Pattern=^[a-z0-9A-Z\-_.]+$
 	Type string `json:"type"`
 
 	// SourcePattern specifies a regular expression pattern
@@ -76,7 +73,6 @@ type PipelineTriggerPipeline struct {
 
 	// Status specifies the status of pipeline. If the value is empty,
 	// it matches both success and failure.
-	// +kubebuilder:validation:Enum=success,failure,neutral
 	Status CompletionStatus `json:"status,omitempty"`
 }
 
