@@ -173,9 +173,6 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 	event.ObjectMeta = metav1.ObjectMeta{
 		Namespace: namespace,
 		Name:      v1alpha1.NewID(),
-		Labels: map[string]string{
-			v1alpha1.KeyEventType: event.Spec.Type,
-		},
 	}
 
 	err := c.Create(context.TODO(), event)
