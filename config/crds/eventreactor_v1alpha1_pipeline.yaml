@@ -43,9 +43,6 @@ spec:
                       type: string
                     type:
                       description: Type specifies the type of event.
-                      maxLength: 63
-                      minLength: 1
-                      pattern: ^[a-z0-9A-Z\-_.]+$
                       type: string
                   required:
                   - type
@@ -65,10 +62,6 @@ spec:
                     status:
                       description: Status specifies the status of pipeline. If the
                         value is empty, it matches both success and failure.
-                      enum:
-                      - success
-                      - failure
-                      - neutral
                       type: string
                   type: object
               type: object

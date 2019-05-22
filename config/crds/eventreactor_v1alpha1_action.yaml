@@ -39,9 +39,6 @@ spec:
                   type: string
                 type:
                   description: Source is the type of event.
-                  maxLength: 63
-                  minLength: 1
-                  pattern: ^[a-z0-9A-Z\-_.]+$
                   type: string
               required:
               - name
@@ -95,7 +92,6 @@ spec:
                   description: Via is a list of upstream action names.
                   items:
                     type: string
-                  maxItems: 10
                   type: array
               required:
               - name

@@ -36,14 +36,12 @@ spec:
               type: string
             id:
               description: ID specifies the unique ID of CloudEvents.
-              minLength: 1
               type: string
             schemaURL:
               description: SchemaURL specifies the schema URL of CloudEvents.
               type: string
             source:
               description: Source specifies the source of CloudEvents.
-              minLength: 1
               type: string
             time:
               description: Time specifies the time of CloudEvents.
@@ -51,9 +49,6 @@ spec:
               type: string
             type:
               description: Type specifies the type of CloudEvents.
-              maxLength: 63
-              minLength: 1
-              pattern: ^[a-z0-9A-Z\-_.]+$
               type: string
           required:
           - type
