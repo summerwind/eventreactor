@@ -108,7 +108,7 @@ func TestTypeValidation(t *testing.T) {
 			},
 		}
 
-		err := c.Create(context.TODO(), ev)
+		err := ev.Validate()
 		if test.valid {
 			g.Expect(err).NotTo(gomega.HaveOccurred())
 		} else {
@@ -146,7 +146,7 @@ func TestSourceValidation(t *testing.T) {
 			},
 		}
 
-		err := c.Create(context.TODO(), ev)
+		err := ev.Validate()
 		if test.valid {
 			g.Expect(err).NotTo(gomega.HaveOccurred())
 		} else {
@@ -184,7 +184,7 @@ func TestIDValidation(t *testing.T) {
 			},
 		}
 
-		err := c.Create(context.TODO(), ev)
+		err := ev.Validate()
 		if test.valid {
 			g.Expect(err).NotTo(gomega.HaveOccurred())
 		} else {

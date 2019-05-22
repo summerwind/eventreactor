@@ -128,7 +128,7 @@ func TestEventTriggerTypeValidation(t *testing.T) {
 			},
 		}
 
-		err := c.Create(context.TODO(), pipeline)
+		err := pipeline.Validate()
 		if test.valid {
 			g.Expect(err).NotTo(gomega.HaveOccurred())
 		} else {
@@ -177,7 +177,7 @@ func TestPipelineTriggerStatusValidation(t *testing.T) {
 			},
 		}
 
-		err := c.Create(context.TODO(), pipeline)
+		err := pipeline.Validate()
 		if test.valid {
 			g.Expect(err).NotTo(gomega.HaveOccurred())
 		} else {
