@@ -13,7 +13,7 @@ import (
 
 func NewEventsGetCommand() *cobra.Command {
 	var cmd = &cobra.Command{
-		Use:   "get <action>",
+		Use:   "get <event>",
 		Short: "Print the information of event",
 		Long:  "Print the information of event.",
 		RunE:  eventsGetRun,
