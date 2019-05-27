@@ -34,7 +34,7 @@ spec:
         - name: secret-volume
           mountPath: /etc/tls
         ports:
-        - containerPort: 14389
+        - containerPort: 443
         resources:
           requests:
             cpu: 100m
@@ -60,4 +60,4 @@ spec:
   ports:
   - protocol: TCP
     port: 443
-    targetPort: 14389
+    targetPort: 443
