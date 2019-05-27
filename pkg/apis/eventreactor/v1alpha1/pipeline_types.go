@@ -93,6 +93,11 @@ func (p *PipelineTriggerPipeline) Validate() error {
 		return fmt.Errorf("invalid pipeline status: %v", p.Status)
 	}
 
+	_, err := metav1.LabelSelectorAsSelector(&p.Selector)
+	if err != nil {
+		return fmt.Errorf("invalid selector: %v", err)
+	}
+
 	return nil
 }
 
