@@ -24,6 +24,11 @@ import (
 
 	buildv1alpha1 "github.com/knative/build/pkg/apis/build/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+)
+
+const (
+	MaxUpstreamLimit = 9
 )
 
 // PipelineTriggerEvent defines the condition of the event to execute pipeline.
@@ -179,6 +184,139 @@ type Pipeline struct {
 // Validate returns error when its field values are invalid.
 func (p *Pipeline) Validate() error {
 	return p.Spec.Validate()
+}
+
+// NewActionWithEvent returns Action based on specified Event.
+func (p *Pipeline) NewActionWithEvent(event *Event) (*Action, error) {
+	if p.Spec.Trigger.Event == nil {
+		return nil, errors.New("event trigger is not set")
+	}
+
+	if p.Spec.Trigger.Event.Type != event.Spec.Type {
+		return nil, errors.New("event type mismatched")
+	}
+
+	matched, err := regexp.MatchString(p.Spec.Trigger.Event.SourcePattern, event.Spec.Source)
+	if err != nil {
+		return nil, errors.New("invalid source pattern")
+	}
+	if !matched {
+		return nil, errors.New("source pattern mismatched")
+	}
+
+	name := NewID()
+
+	labels := map[string]string{}
+	for key, val := range p.ObjectMeta.Labels {
+		labels[key] = val
+	}
+	labels[KeyEventName] = event.Name
+	labels[KeyPipelineName] = p.Name
+	labels[KeyTransactionID] = name
+
+	return &Action{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: p.Namespace,
+			Labels:    labels,
+		},
+		Spec: ActionSpec{
+			BuildSpec: *(p.Spec.BuildSpec.DeepCopy()),
+			Event: ActionSpecEvent{
+				Name:   event.Name,
+				Type:   event.Spec.Type,
+				Source: event.Spec.Source,
+			},
+			Pipeline: ActionSpecPipeline{
+				Name:       p.Name,
+				Generation: p.Generation,
+			},
+			Transaction: ActionSpecTransaction{
+				ID:    name,
+				Stage: 1,
+			},
+		},
+	}, nil
+}
+
+// NewActionWithAction returns Action based on specified Action.
+func (p *Pipeline) NewActionWithAction(action *Action) (*Action, error) {
+	if p.Spec.Trigger.Pipeline == nil {
+		return nil, errors.New("pipeline trigger is not set")
+	}
+
+	// Ignore if the pipeline is the same as the triggered action
+	// to avoid looping
+	if p.Name == action.Spec.Pipeline.Name {
+		return nil, errors.New("run of same pipeline is not allowed")
+	}
+
+	// Ignore if name is not matched
+	pn := p.Spec.Trigger.Pipeline.Name
+	if pn != "" && pn != action.Spec.Pipeline.Name {
+		return nil, errors.New("pipeline name mismatched")
+	}
+
+	// Ignore if status is not matched
+	status := p.Spec.Trigger.Pipeline.Status
+	if status != "" && status != action.CompletionStatus() {
+		return nil, errors.New("status mismatched")
+	}
+
+	ls := p.Spec.Trigger.Pipeline.Selector
+	selector, err := metav1.LabelSelectorAsSelector(&ls)
+	if err != nil {
+		return nil, err
+	}
+
+	// Ignore if labels does not match the selector
+	if !selector.Empty() && !selector.Matches(labels.Set(action.ObjectMeta.Labels)) {
+		return nil, errors.New("selector mismatched")
+	}
+
+	via := action.Spec.Upstream.Via
+	if via == nil {
+		via = []string{}
+	}
+	via = append(via, action.Spec.Pipeline.Name)
+
+	if len(via) >= MaxUpstreamLimit {
+		return nil, errors.New("upstream limit exceeded")
+	}
+
+	labels := map[string]string{}
+	for key, val := range p.ObjectMeta.Labels {
+		labels[key] = val
+	}
+	labels[KeyEventName] = action.Spec.Event.Name
+	labels[KeyPipelineName] = p.Name
+	labels[KeyTransactionID] = action.Spec.Transaction.ID
+
+	return &Action{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      NewID(),
+			Namespace: p.Namespace,
+			Labels:    labels,
+		},
+		Spec: ActionSpec{
+			BuildSpec: *(p.Spec.BuildSpec.DeepCopy()),
+			Event:     *(action.Spec.Event.DeepCopy()),
+			Pipeline: ActionSpecPipeline{
+				Name:       p.Name,
+				Generation: p.Generation,
+			},
+			Transaction: ActionSpecTransaction{
+				ID:    action.Spec.Transaction.ID,
+				Stage: action.Spec.Transaction.Stage + 1,
+			},
+			Upstream: ActionSpecUpstream{
+				Name:     action.Name,
+				Status:   action.CompletionStatus(),
+				Pipeline: action.Spec.Pipeline.Name,
+				Via:      via,
+			},
+		},
+	}, nil
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
