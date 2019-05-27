@@ -31,6 +31,8 @@ import (
 )
 
 func main() {
+	var metricsBindAddr = flag.String("metrics-bind-address", "0.0.0.0:14389", "The IP address for the metrics server to serve on.")
+
 	flag.Parse()
 
 	logf.SetLogger(logf.ZapLogger(false))
@@ -46,7 +48,9 @@ func main() {
 
 	// Create a new Cmd to provide shared dependencies and start components
 	log.Info("setting up manager")
-	mgr, err := manager.New(cfg, manager.Options{})
+	mgr, err := manager.New(cfg, manager.Options{
+		MetricsBindAddress: *metricsBindAddr,
+	})
 	if err != nil {
 		log.Error(err, "unable to set up overall controller manager")
 		os.Exit(1)
