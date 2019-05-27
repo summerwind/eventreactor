@@ -21,6 +21,7 @@ func NewPipelinesCommand() *cobra.Command {
 	cmd.AddCommand(NewPipelinesListCommand())
 	cmd.AddCommand(NewPipelinesSetCommand())
 	cmd.AddCommand(NewPipelinesDeleteCommand())
+	cmd.AddCommand(NewPipelinesRunCommand())
 
 	return cmd
 }
