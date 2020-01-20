@@ -1,0 +1,26 @@
+# permissions to do edit subscriptions.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: subscription-editor-role
+rules:
+- apiGroups:
+  - eventreactor.summerwind.dev
+  resources:
+  - subscriptions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - eventreactor.summerwind.dev
+  resources:
+  - subscriptions/status
+  verbs:
+  - get
+  - patch
+  - update

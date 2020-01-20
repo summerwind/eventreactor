@@ -4,4 +4,7 @@ resources:
 - group: eventreactor
   kind: Event
   version: v1alpha1
+- group: eventreactor
+  kind: Subscription
+  version: v1alpha1
 version: "2"

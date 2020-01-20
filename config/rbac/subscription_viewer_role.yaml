@@ -1,0 +1,20 @@
+# permissions to do viewer subscriptions.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: subscription-viewer-role
+rules:
+- apiGroups:
+  - eventreactor.summerwind.dev
+  resources:
+  - subscriptions
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - eventreactor.summerwind.dev
+  resources:
+  - subscriptions/status
+  verbs:
+  - get

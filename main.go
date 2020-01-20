@@ -73,6 +73,14 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Event")
 		os.Exit(1)
 	}
+	if err = (&controllers.SubscriptionReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Subscription"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Subscription")
+		os.Exit(1)
+	}
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")
