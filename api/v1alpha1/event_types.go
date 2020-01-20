@@ -20,22 +20,38 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // EventSpec defines the desired state of Event
 type EventSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// ID specifies the unique ID of event.
+	ID string `json:"id"`
+	// Source specifies the source of event.
+	Source string `json:"source"`
+	// Type specifies the type of events.
+	Type string `json:"type"`
 
-	// Foo is an example field of Event. Edit Event_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// DataContentType specifies the content type of data.
+	DataContentType string `json:"dataContentType,omitempty"`
+	// DataSchema specifies the URL of data schema.
+	DataSchema string `json:"dataSchema,omitempty"`
+	// Subject specifies the subject of the event in the context of the event producer.
+	Subject string `json:"subject,omitempty"`
+	// Time specifies the timestamp of when the occurrence happened.
+	Time *metav1.Time `json:"time,omitempty"`
+
+	// Data specifies the event payload.
+	Data string `json:"data,omitempty"`
 }
 
 // EventStatus defines the observed state of Event
 type EventStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// The phase of a Event is a simple, high-level summary of where the Event is in its lifecycle.
+	Phase string `json:"phase"`
+	// A brief CamelCase message indicating details about why the event is in this state.
+	Reason string `json:"reason"`
+	// A human readable message indicating details about why the event is in this condition.
+	Message string `json:"message"`
+	// RFC 3339 date and time at which the object was acknowledged by the controller.
+	DispatchTime *metav1.Time `json:"dispatchTime,omitempty"`
 }
 
 // +kubebuilder:object:root=true
