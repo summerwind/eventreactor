@@ -1,3 +1,7 @@
 domain: summerwind.dev
 repo: github.com/summerwind/eventreactor
+resources:
+- group: eventreactor
+  kind: Event
+  version: v1alpha1
 version: "2"

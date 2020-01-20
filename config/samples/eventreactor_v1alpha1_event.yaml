@@ -1,0 +1,7 @@
+apiVersion: eventreactor.summerwind.dev/v1alpha1
+kind: Event
+metadata:
+  name: event-sample
+spec:
+  # Add fields here
+  foo: bar
