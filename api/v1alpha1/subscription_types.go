@@ -17,19 +17,26 @@ limitations under the License.
 package v1alpha1
 
 import (
+	pipelinev1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // SubscriptionSpec defines the desired state of Subscription
 type SubscriptionSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Trigger             SubscriptionSpecTrigger       `json:"trigger"`
+	PipelineRunTemplate *pipelinev1alpha1.PipelineRun `json:"pipelineRunTemplate"`
+}
 
-	// Foo is an example field of Subscription. Edit Subscription_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+// SubscriptionSpecTrigger defines the trigger of Subscription
+type SubscriptionSpecTrigger struct {
+	Event *SubscriptionSpecTriggerEvent `json:"event"`
+}
+
+// SubscriptionSpecTriggerEvent defines the event trigger of Subscription
+type SubscriptionSpecTriggerEvent struct {
+	MatchType    string `json:"matchType"`
+	MatchSource  string `json:"matchSource"`
+	MatchSubject string `json:"matchSubject"`
 }
 
 // SubscriptionStatus defines the observed state of Subscription
