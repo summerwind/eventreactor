@@ -17,25 +17,24 @@ limitations under the License.
 package v1alpha1
 
 import (
-	pipelinev1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // SubscriptionSpec defines the desired state of Subscription
 type SubscriptionSpec struct {
-	Trigger             SubscriptionSpecTrigger       `json:"trigger"`
-	PipelineRunTemplate *pipelinev1alpha1.PipelineRun `json:"pipelineRunTemplate"`
+	Trigger SubscriptionSpecTrigger `json:"trigger"`
+	// +kubebuilder:validation:MinItems=1
+	//ResourceTemplates []runtime.RawExtension `json:"resourceTemplates,omitempty"`
+	ResourceTemplates []unstructured.Unstructured `json:"resourceTemplates,omitempty"`
 }
 
 // SubscriptionSpecTrigger defines the trigger of Subscription
 type SubscriptionSpecTrigger struct {
-	Event *SubscriptionSpecTriggerEvent `json:"event"`
-}
-
-// SubscriptionSpecTriggerEvent defines the event trigger of Subscription
-type SubscriptionSpecTriggerEvent struct {
-	MatchType    string `json:"matchType"`
-	MatchSource  string `json:"matchSource"`
+	Type string `json:"type"`
+	// +optional
+	MatchSource string `json:"matchSource"`
+	// +optional
 	MatchSubject string `json:"matchSubject"`
 }
 

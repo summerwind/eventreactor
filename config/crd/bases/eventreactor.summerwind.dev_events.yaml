@@ -1,0 +1,104 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.4
+  creationTimestamp: null
+  name: events.eventreactor.summerwind.dev
+spec:
+  group: eventreactor.summerwind.dev
+  names:
+    kind: Event
+    listKind: EventList
+    plural: events
+    singular: event
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      description: Event is the Schema for the events API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: EventSpec defines the desired state of Event
+          properties:
+            data:
+              description: Data specifies the event payload.
+              type: string
+            dataContentType:
+              description: DataContentType specifies the content type of data.
+              type: string
+            dataSchema:
+              description: DataSchema specifies the URL of data schema.
+              type: string
+            id:
+              description: ID specifies the unique ID of event.
+              type: string
+            source:
+              description: Source specifies the source of event.
+              type: string
+            subject:
+              description: Subject specifies the subject of the event in the context
+                of the event producer.
+              type: string
+            time:
+              description: Time specifies the timestamp of when the occurrence happened.
+              format: date-time
+              type: string
+            type:
+              description: Type specifies the type of events.
+              type: string
+          required:
+          - id
+          - source
+          - type
+          type: object
+        status:
+          description: EventStatus defines the observed state of Event
+          properties:
+            dispatchTime:
+              description: RFC 3339 date and time at which the object was acknowledged
+                by the controller.
+              format: date-time
+              type: string
+            message:
+              description: A human readable message indicating details about why the
+                event is in this condition.
+              type: string
+            phase:
+              description: The phase of a Event is a simple, high-level summary of
+                where the Event is in its lifecycle.
+              type: string
+            reason:
+              description: A brief CamelCase message indicating details about why
+                the event is in this state.
+              type: string
+          required:
+          - message
+          - phase
+          - reason
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

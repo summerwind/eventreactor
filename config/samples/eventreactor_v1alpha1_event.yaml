@@ -1,7 +1,10 @@
 apiVersion: eventreactor.summerwind.dev/v1alpha1
 kind: Event
 metadata:
-  name: event-sample
+  name: event-sample2
 spec:
-  # Add fields here
-  foo: bar
+  id: 8bb31b55-8a1e-4f47-a6b1-7cea13d9f17c
+  type:  dev.summerwind.eventreactor.test
+  source: /eventreactor/test
+  dataContentType: application/json
+  data: '{"message": "hello"}'

@@ -30,15 +30,20 @@ type EventSpec struct {
 	Type string `json:"type"`
 
 	// DataContentType specifies the content type of data.
+	// +optional
 	DataContentType string `json:"dataContentType,omitempty"`
 	// DataSchema specifies the URL of data schema.
+	// +optional
 	DataSchema string `json:"dataSchema,omitempty"`
 	// Subject specifies the subject of the event in the context of the event producer.
+	// +optional
 	Subject string `json:"subject,omitempty"`
 	// Time specifies the timestamp of when the occurrence happened.
+	// +optional
 	Time *metav1.Time `json:"time,omitempty"`
 
 	// Data specifies the event payload.
+	// +optional
 	Data string `json:"data,omitempty"`
 }
 
