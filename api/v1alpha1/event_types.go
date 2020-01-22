@@ -17,8 +17,16 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
+	"math/rand"
+	"strings"
+	"time"
+
+	"github.com/oklog/ulid/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+var entropy *rand.Rand
 
 // EventSpec defines the desired state of Event
 type EventSpec struct {
@@ -79,6 +87,17 @@ type EventList struct {
 	Items           []Event `json:"items"`
 }
 
+func NewEventName() string {
+	id, err := ulid.New(ulid.Now(), entropy)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to generate ULID: %s", err))
+	}
+
+	return strings.ToLower(id.String())
+}
+
 func init() {
 	SchemeBuilder.Register(&Event{}, &EventList{})
+
+	entropy = rand.New(rand.NewSource(time.Now().UnixNano()))
 }

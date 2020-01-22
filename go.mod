@@ -7,9 +7,12 @@ require (
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/go-logr/logr v0.1.0
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
+	github.com/oklog/ulid v1.3.1
+	github.com/oklog/ulid/v2 v2.0.2
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
 	github.com/prometheus/common v0.0.0-20181126121408-4724e9255275
+	github.com/spf13/cobra v0.0.5
 	github.com/tektoncd/pipeline v0.9.2
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6 // indirect
 	k8s.io/apimachinery v0.0.0-20190913080033-27d36303b655
