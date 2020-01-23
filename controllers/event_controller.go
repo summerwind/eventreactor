@@ -17,8 +17,11 @@ limitations under the License.
 package controllers
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"regexp"
+	"text/template"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -30,6 +33,7 @@ import (
 
 	v1alpha1 "github.com/summerwind/eventreactor/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 var eventTypeKey = ".spec.trigger.type"
@@ -107,9 +111,14 @@ func (r *EventReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			}
 		}
 
-		for _, tmpl := range sub.Spec.ResourceTemplates {
+		for i, tmpl := range sub.Spec.ResourceTemplates {
 			res := tmpl.DeepCopy()
 			current := tmpl.DeepCopy()
+
+			err = expandVars(res, &instance)
+			if err != nil {
+				log.Error(err, "Failed to expand variables", "subscription", sub.Name, "index", i)
+			}
 
 			res.SetNamespace(sub.Namespace)
 			if res.GetName() == "" {
@@ -171,4 +180,39 @@ func (r *EventReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Event{}).
 		Complete(r)
+}
+
+func expandVars(res *unstructured.Unstructured, ev *v1alpha1.Event) error {
+	content := res.UnstructuredContent()
+
+	resBytes, err := json.Marshal(content)
+	if err != nil {
+		return err
+	}
+
+	tmpl, err := template.New("resource").Delims("((", "))").Parse(string(resBytes))
+	if err != nil {
+		return err
+	}
+
+	vars := struct {
+		Event *v1alpha1.Event
+		Data  interface{}
+	}{
+		Event: ev,
+		Data:  nil,
+	}
+
+	buf := bytes.NewBuffer([]byte{})
+	if err := tmpl.Execute(buf, vars); err != nil {
+		return err
+	}
+
+	if err := json.Unmarshal(buf.Bytes(), &content); err != nil {
+		return err
+	}
+
+	res.SetUnstructuredContent(content)
+
+	return nil
 }
