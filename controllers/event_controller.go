@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"text/template"
 
@@ -55,7 +56,7 @@ func (r *EventReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	var instance v1alpha1.Event
 	err := r.Get(ctx, req.NamespacedName, &instance)
 	if err != nil {
-		log.Error(err, "Unable to fetch Event")
+		log.Error(err, "Failed to get event")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -72,7 +73,7 @@ func (r *EventReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	var subscriptionList v1alpha1.SubscriptionList
 	err = r.List(ctx, &subscriptionList, opts...)
 	if err != nil {
-		log.V(1).Info("Phase 1")
+		log.Error(err, "Failed to get subscription list")
 		return ctrl.Result{}, err
 	}
 
@@ -82,19 +83,21 @@ func (r *EventReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			matched bool
 		)
 
+		subLog := log.WithValues("subscription", fmt.Sprintf("%s/%s", sub.Namespace, sub.Name))
+
 		if sub.Spec.Trigger.Type != instance.Spec.Type {
-			log.V(1).Info("Event type mismatched", "subscription", sub.Name)
+			subLog.V(1).Info("Event type mismatched")
 			continue
 		}
 
 		if sub.Spec.Trigger.MatchSource != "" {
 			matched, err = regexp.MatchString(sub.Spec.Trigger.MatchSource, instance.Spec.Source)
 			if err != nil {
-				log.V(0).Info("Invalid event source pattern", "subscription", sub.Name)
+				subLog.Info("Invalid event source pattern")
 				continue
 			}
 			if !matched {
-				log.V(1).Info("Event source mismatched", "subscription", sub.Name)
+				subLog.V(1).Info("Event source mismatched")
 				continue
 			}
 		}
@@ -102,53 +105,55 @@ func (r *EventReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		if sub.Spec.Trigger.MatchSubject != "" {
 			matched, err = regexp.MatchString(sub.Spec.Trigger.MatchSubject, instance.Spec.Subject)
 			if err != nil {
-				log.V(0).Info("Invalid event subject pattern", "subscription", sub.Name)
+				subLog.Info("Invalid event subject pattern")
 				continue
 			}
 			if !matched {
-				log.V(1).Info("Event subject mismatched", "subscription", sub.Name)
+				subLog.Info("Event subject mismatched")
 				continue
 			}
 		}
 
-		for i, tmpl := range sub.Spec.ResourceTemplates {
+		for _, tmpl := range sub.Spec.ResourceTemplates {
 			res := tmpl.DeepCopy()
 			current := tmpl.DeepCopy()
-
-			err = expandVars(res, &instance)
-			if err != nil {
-				log.Error(err, "Failed to expand variables", "subscription", sub.Name, "index", i)
-			}
 
 			res.SetNamespace(sub.Namespace)
 			if res.GetName() == "" {
 				res.SetName(sub.Name)
 			}
 
-			resReq := types.NamespacedName{
+			resLog := subLog.WithValues("kind", res.GroupVersionKind().Kind, "name", fmt.Sprintf("%s/%s", res.GetNamespace(), res.GetName()))
+
+			err = expandVars(res, &instance)
+			if err != nil {
+				resLog.Error(err, "Failed to expand variables")
+			}
+
+			key := types.NamespacedName{
 				Name:      res.GetName(),
 				Namespace: res.GetNamespace(),
 			}
 
-			err = r.Get(ctx, resReq, current)
+			err = r.Get(ctx, key, current)
 			if err != nil {
 				if errors.IsNotFound(err) {
 					err = r.Create(ctx, res)
 					if err != nil {
-						log.V(1).Info("Phase 2")
+						resLog.Error(err, "Failed to create resource")
 						return reconcile.Result{}, err
 					}
-					log.Info("Create a new resource with template", "namespace", res.GetNamespace(), "name", res.GetName(), "gvk", res.GroupVersionKind())
+					resLog.Info("Resource created")
 				} else {
 					return ctrl.Result{}, err
 				}
 			} else {
 				err = r.Update(ctx, res)
 				if err != nil {
-					log.V(1).Info("Phase 3", "object", current)
+					resLog.Error(err, "Failed to update resource")
 					return reconcile.Result{}, err
 				}
-				log.Info("Update resource with template", "namespace", res.GetNamespace(), "name", res.GetName(), "gvk", res.GroupVersionKind())
+				resLog.Info("Resource updated")
 			}
 		}
 	}
@@ -159,11 +164,9 @@ func (r *EventReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	err = r.Update(ctx, event)
 	if err != nil {
-		log.V(1).Info("Phase 4")
+		log.Error(err, "Failed to update event")
 		return ctrl.Result{}, err
 	}
-
-	log.Info("Successfully dispatched")
 
 	return ctrl.Result{}, nil
 }
