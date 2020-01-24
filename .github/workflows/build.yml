@@ -7,6 +7,11 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+    - name: Install kubebuilder
+      run: |
+        curl -L -O https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.2.0/kubebuilder_2.2.0_linux_amd64.tar.gz
+        tar zxvf kubebuilder_2.2.0_linux_amd64.tar.gz
+        mv kubebuilder_2.2.0_linux_amd64 /usr/local/kubebuilder
     - name: Build container
       run: make docker-build
     - name: Docker Login
