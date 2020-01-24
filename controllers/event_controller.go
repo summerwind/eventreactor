@@ -148,6 +148,10 @@ func (r *EventReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 					return ctrl.Result{}, err
 				}
 			} else {
+				// ResourceVersion must be keep to update custom resource.
+				// If it is not set, API will return a validation error.
+				res.SetResourceVersion(current.GetResourceVersion())
+
 				err = r.Update(ctx, res)
 				if err != nil {
 					resLog.Error(err, "Failed to update resource")
