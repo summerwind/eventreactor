@@ -11,7 +11,7 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-all: manager
+all: manager receiver
 
 # Run tests
 test: generate fmt vet manifests
@@ -20,6 +20,10 @@ test: generate fmt vet manifests
 # Build manager binary
 manager: generate fmt vet
 	go build -o bin/manager cmd/manager/main.go
+
+# Build manager binary
+receiver: generate fmt vet
+	go build -o bin/receiver cmd/receiver/main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests

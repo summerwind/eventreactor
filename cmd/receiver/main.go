@@ -227,7 +227,7 @@ func main() {
 	log = ctrl.Log.WithName("event-receiver")
 
 	var cmd = &cobra.Command{
-		Use:   "event-receiver",
+		Use:   "receiver",
 		Short: "Receives CloudEvents formatted event and creates resource",
 		RunE:  run,
 
