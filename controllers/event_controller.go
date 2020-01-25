@@ -116,8 +116,6 @@ func (r *EventReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 		for _, tmpl := range sub.Spec.ResourceTemplates {
 			res := tmpl.DeepCopy()
-			current := tmpl.DeepCopy()
-
 			res.SetNamespace(sub.Namespace)
 			if res.GetName() == "" {
 				res.SetName(sub.Name)
@@ -135,7 +133,10 @@ func (r *EventReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 				Namespace: res.GetNamespace(),
 			}
 
-			err = r.Get(ctx, key, current)
+			current := unstructured.Unstructured{}
+			current.SetGroupVersionKind(res.GroupVersionKind())
+
+			err = r.Get(ctx, key, &current)
 			if err != nil {
 				if errors.IsNotFound(err) {
 					err = r.Create(ctx, res)
@@ -148,9 +149,9 @@ func (r *EventReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 					return ctrl.Result{}, err
 				}
 			} else {
-				// ResourceVersion must be keep to update custom resource.
+				// resourceVersion field must be keep to update custom resource.
 				// If it is not set, API will return a validation error.
-				res.SetResourceVersion(current.GetResourceVersion())
+				res.Object["metadata"] = current.Object["metadata"]
 
 				err = r.Update(ctx, res)
 				if err != nil {
